@@ -3237,15 +3237,17 @@ function drawMap() {
   // 선풍기 + 바람 줄기
   for (const f of fans) {
     if (f.blowing) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.32)';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([16, 20]);
+      ctx.setLineDash([18, 14]);
       ctx.lineDashOffset = -(performance.now() / 5) * f.dir;
       for (const oy of [-65, 0, 65]) {
-        ctx.beginPath();
-        ctx.moveTo(f.x + f.dir * 26, f.y + oy);
-        ctx.lineTo(f.x + f.dir * (26 + f.range * 0.85), f.y + oy);
-        ctx.stroke();
+        const x0 = f.x + f.dir * 26, x1 = f.x + f.dir * (26 + f.range * 0.85);
+        // 흰 하이라이트 밑줄 + 진한 파란 줄기 → 밝은 민트 배경에서도 또렷하게
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(x0, f.y + oy); ctx.lineTo(x1, f.y + oy); ctx.stroke();
+        ctx.strokeStyle = 'rgba(37,78,148,0.85)';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x0, f.y + oy); ctx.lineTo(x1, f.y + oy); ctx.stroke();
       }
       ctx.setLineDash([]);
       ctx.lineDashOffset = 0;
