@@ -3,19 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>서울룰렛 - 서울시교육청 뽑기판</title>
+<title>서울교육룰렛 - 서울시교육청 뽑기판</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%2317b0a6%22%2F%3E%3Cpath%20d%3D%22M22%2015%20q4%20-7%208%200%20z%22%20fill%3D%22%230e8f86%22%2F%3E%3Cpath%20d%3D%22M28%2013%20q4%20-8%208%200%20z%22%20fill%3D%22%230e8f86%22%2F%3E%3Cpath%20d%3D%22M34%2015%20q4%20-7%208%200%20z%22%20fill%3D%22%230e8f86%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2235%22%20r%3D%2219%22%20fill%3D%22%23ffffff%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2238%22%20r%3D%224.2%22%20fill%3D%22%23ff9bb0%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2238%22%20r%3D%224.2%22%20fill%3D%22%23ff9bb0%22%2F%3E%3Ccircle%20cx%3D%2226%22%20cy%3D%2232%22%20r%3D%223.1%22%20fill%3D%22%232b2b3a%22%2F%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2232%22%20r%3D%223.1%22%20fill%3D%22%232b2b3a%22%2F%3E%3Ccircle%20cx%3D%2226.9%22%20cy%3D%2231.1%22%20r%3D%221%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2238.9%22%20cy%3D%2231.1%22%20r%3D%221%22%20fill%3D%22%23fff%22%2F%3E%3Cpath%20d%3D%22M27%2040%20q5%205%2010%200%22%20stroke%3D%22%232b2b3a%22%20stroke-width%3D%222.4%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
 <link rel="apple-touch-icon" href="favicon.svg">
-<meta property="og:title" content="서울룰렛 - 두근두근 구슬 레이스 뽑기판">
+<meta property="og:title" content="서울교육룰렛 - 두근두근 구슬 레이스 뽑기판">
 <meta property="og:description" content="우리 반 추첨을 구슬 레이스로! 당첨 뽑기부터 모둠·자리 배치까지 한 번에.">
-<meta property="og:image" content="https://seoul-rullet.vercel.app/og-image.jpg">
+<meta property="og:image" content="/og-image.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="600">
-<meta property="og:url" content="https://seoul-rullet.vercel.app/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://seoul-rullet.vercel.app/og-image.jpg">
+<meta name="twitter:image" content="/og-image.jpg">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -263,12 +262,7 @@
   }
   .game-btn:hover { background: rgba(30,34,44,0.85); border-color: rgba(255,255,255,0.25); }
   .game-btn.toggled { background: rgba(91,108,255,0.3); border-color: #5b6cff; color: #ccd3ff; }
-  #mapLabel {
-    position: absolute; top: 58px; left: 50%; transform: translateX(-50%);
-    z-index: 9; background: rgba(15,18,24,0.6); border: 1px solid rgba(255,255,255,0.1);
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-    border-radius: 999px; padding: 3px 16px; font-size: 12.5px; font-weight: 600; color: #c3c9d5;
-  }
+  #mapLabel { display: none; }   /* 맵이 하나뿐이라 표시 안 함 */
   #rankPanel {
     position: absolute; top: 14px; left: 16px; z-index: 10;
     background: rgba(15,18,24,0.72); border: 1px solid rgba(255,255,255,0.12);
@@ -401,7 +395,7 @@
 <!-- ============ 설정 화면 ============ -->
 <div id="setupScreen">
   <div class="setup-card">
-    <div class="title">서울룰렛</div>
+    <div class="title">서울교육룰렛</div>
     <div class="subtitle" id="subtitleText">서울시교육청 뽑기판</div>
 
     <input type="text" id="classInput" style="display:none">
@@ -608,7 +602,7 @@
 <script>
 'use strict';
 /* ==========================================================
-   서울룰렛 v2 — 서울시교육청 뽑기판
+   서울교육룰렛 v2 — 서울시교육청 뽑기판
    물리 엔진 · 맵 10종 · 테마 3종 · 팀짜기 — 전부 자체 제작 (단일 파일)
    ========================================================== */
 
@@ -2781,7 +2775,7 @@ function renderSeats() {
 $('copyResultBtn').onclick = () => {
   const order = uniqueOrder();
   const cls = $('classInput').value.trim();
-  let txt = `서울룰렛 결과${cls ? ' (' + cls + ')' : ''} — ${currentMapName}\n`;
+  let txt = `서울교육룰렛 결과${cls ? ' (' + cls + ')' : ''} — ${currentMapName}\n`;
   txt += `당첨 방식: ${mode === 'first' ? '1등' : '꼴찌'} ${raceWinners.length || winnerCount}명 당첨\n`;
   if (raceWinners.length) txt += `당첨: ${raceWinners.join(', ')}\n`;
   txt += `\n[전체 순위]\n`;
@@ -2823,7 +2817,7 @@ $('saveImgBtn').onclick = () => {
   x.textAlign = 'center';
   x.fillStyle = '#e8eaf0';
   x.font = `800 34px ${FONT}`;
-  x.fillText('서울룰렛 최종 결과', W / 2, 70);
+  x.fillText('서울교육룰렛 최종 결과', W / 2, 70);
   x.fillStyle = '#9aa3b2';
   x.font = `500 16px ${FONT}`;
   x.fillText($('resultSub').textContent + ' · ' + new Date().toLocaleDateString('ko-KR'), W / 2, 102);
@@ -2879,7 +2873,7 @@ $('saveImgBtn').onclick = () => {
     }
   }
   const a = document.createElement('a');
-  a.download = `서울룰렛-결과-${new Date().toISOString().slice(0, 10)}.png`;
+  a.download = `서울교육룰렛-결과-${new Date().toISOString().slice(0, 10)}.png`;
   a.href = c.toDataURL('image/png');
   a.click();
   $('saveImgBtn').textContent = '저장됨!';
@@ -3032,11 +3026,11 @@ function drawSenBanner() {
   // 비전 문구는 지표 아래(출발 깔때기 위 빈 공간)에 두어 맵 이름표와 겹치지 않게
   ctx.font = '800 38px "Pretendard Variable", Pretendard, sans-serif';
   ctx.fillStyle = '#0e8f86';
-  ctx.fillText('미래를 여는', WORLD_W / 2, -74);
+  ctx.fillText('미래를 여는', WORLD_W / 2, 66);
   ctx.font = '800 50px "Pretendard Variable", Pretendard, sans-serif';
   ctx.fillStyle = '#2f5aa8';
-  ctx.fillText('협력교육', WORLD_W / 2, -26);
-  const cx = WORLD_W / 2, cy = -190, rad = 46;
+  ctx.fillText('협력교육', WORLD_W / 2, 114);
+  const cx = WORLD_W / 2, cy = -50, rad = 46;
   const nodes = [
     { x: cx,      y: cy - 26, c: '#d6336c', a: '학생의', b: '꿈' },
     { x: cx - 50, y: cy + 30, c: '#17a2a2', a: '교사의', b: '긍지' },
@@ -3978,7 +3972,7 @@ $('edExportBtn').onclick = () => {
   const data = { app: 'sindap-roulette-map', version: 1, name, height: edHeight, objects: edObjects };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
-  a.download = `서울룰렛-맵-${name}.json`;
+  a.download = `서울교육룰렛-맵-${name}.json`;
   a.href = URL.createObjectURL(blob);
   a.click();
   URL.revokeObjectURL(a.href);
@@ -4001,7 +3995,7 @@ $('edImportFile').onchange = () => {
       updateLenButtons();
       edDraw();
     } catch (e) {
-      alert('맵 파일을 읽을 수 없어요. 서울룰렛에서 내보낸 .json 파일인지 확인해 주세요.');
+      alert('맵 파일을 읽을 수 없어요. 서울교육룰렛에서 내보낸 .json 파일인지 확인해 주세요.');
     }
   };
   reader.readAsText(file);
