@@ -76,9 +76,9 @@
   .map-row { display: flex; gap: 16px; align-items: stretch; margin-top: 8px; }
   .map-row .map-grid { flex: 1; margin-top: 0; align-content: start; }
   /* ── 2단 레이아웃: 왼쪽 긴 코스 / 오른쪽 명단·설정 ── */
-  .setup-body { display: flex; gap: 24px; align-items: flex-start; margin-top: 6px; }
+  .setup-body { display: flex; gap: 24px; align-items: stretch; margin-top: 6px; }
   .setup-left { width: 250px; flex-shrink: 0; display: flex; flex-direction: column; }
-  .setup-right { flex: 1; min-width: 0; }
+  .setup-right { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   #miniWrap {
     width: 100%;
     background: rgba(0,0,0,0.3);
@@ -177,7 +177,7 @@
   .map-btn:hover { background: rgba(255,255,255,0.06); }
   .map-btn.active { border-color: #5b6cff; background: rgba(91,108,255,0.16); color: #aab4ff; }
   #startBtn {
-    width: 100%; margin-top: 28px;
+    width: 100%; margin-top: 26px;
     background: linear-gradient(135deg, #5b6cff, #8b5cf6);
     color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 6px;
     border: none; border-radius: 14px; padding: 16px;
@@ -474,6 +474,7 @@
             </div>
           </div>
         </div>
+        <button id="startBtn">출발!</button>
       </div>
     </div>
 
@@ -482,8 +483,6 @@
       <label class="check-item"><input type="checkbox" id="optTeams"> 조(모둠) 배치</label>
       <label class="check-item"><input type="checkbox" id="optSeats"> 자리 배치</label>
     </div>
-
-    <button id="startBtn">출발!</button>
   </div>
 </div>
 
@@ -1460,23 +1459,18 @@ function buildBrickArt(art, palette, cx, ty, cell) {
   });
   return cell * art.length;
 }
-// 자라나/열리미 모양 벽돌깨기 관문 (구슬이 캐릭터를 깨고 지나간다)
+// 자라나/열리미 모양 벽돌깨기 관문 — 좌·중·우 3개 배치
+// → 구슬이 반드시 하나는 맞고, 아래 트램펄린과 함께 여러 번 깨지는 걸 볼 수 있다
 function secMascotBricks(y, type) {
   const art = type === 'yeolimi' ? ART_YEOLIMI : ART_JARANA;
   const pal = type === 'yeolimi' ? PAL_YEOLIMI : PAL_JARANA;
-  if (type === 'yeolimi') {
-    // 열리미는 좌·중·우 3개 → 구슬이 반드시 하나는 맞고, 여러 번 깨지는 걸 볼 수 있다
-    const cols = art[0].length;
-    const cell = Math.min(15, (R - L - 120) / (cols * 3));
-    const w1 = cell * cols;
-    let h = 0;
-    for (const cx of [L + 60 + w1 / 2, WORLD_W / 2, R - 60 - w1 / 2]) {
-      h = buildBrickArt(art, pal, cx, y + 90, cell);
-    }
-    return y + 90 + h + 150;
+  const cols = art[0].length;
+  const cell = Math.min(15, (R - L - 120) / (cols * 3));
+  const w1 = cell * cols;
+  let h = 0;
+  for (const cx of [L + 60 + w1 / 2, WORLD_W / 2, R - 60 - w1 / 2]) {
+    h = buildBrickArt(art, pal, cx, y + 90, cell);
   }
-  const cell = Math.min(22, (R - L - 120) / art[0].length);
-  const h = buildBrickArt(art, pal, WORLD_W / 2, y + 90, cell);
   return y + 90 + h + 150;
 }
 
@@ -1691,6 +1685,14 @@ function buildMap(mapDef, previewOnly) {
   walls.push(new Wall(L, -450, L, fy + 10));
   walls.push(new Wall(R, -450, R, fy + 10));
 
+  // 좌우 벽 돌기 — 벽을 타고 직진 낙하하는 구슬을 안쪽으로 튕겨낸다 (좌우 엇갈리게)
+  if (mapDef.senChars) {
+    for (let wy = 560; wy < fy - 420; wy += 240) {
+      pegs.push(new Peg(L + 24, wy, 12, true));
+      pegs.push(new Peg(R - 24, wy + 120, 12, true));
+    }
+  }
+
   // 미리보기(미니맵) 빌드는 코스 모양만 필요 — 아이템류 배치는 생략
   if (!previewOnly) {
     // 편집기에서 직접 놓은 블랙홀·트램펄린이 있으면 자동 배치는 건너뛴다
@@ -1800,18 +1802,21 @@ function buildMap(mapDef, previewOnly) {
       }
     }
 
-    // 열리미(노랑) 벽돌 바로 아래에 트램펄린 3개 → 구슬이 튕겨 올라 열리미가 여러 번 깨지는 걸 보게 한다
+    // 자라나·열리미 벽돌 바로 아래에 트램펄린 3개씩 → 구슬이 튕겨 올라 여러 번 깨지는 걸 보게 한다
     if (mapDef.senChars) {
-      const yb = letters.filter(b => b.color === PAL_YEOLIMI.Y);
-      if (yb.length) {
-        const maxY = Math.max(...yb.map(b => b.y));
-        const minX = Math.min(...yb.map(b => b.x)), maxX = Math.max(...yb.map(b => b.x));
+      const padsUnder = color => {
+        const bricks = letters.filter(b => b.color === color);
+        if (!bricks.length) return;
+        const maxY = Math.max(...bricks.map(b => b.y));
+        const minX = Math.min(...bricks.map(b => b.x)), maxX = Math.max(...bricks.map(b => b.x));
         for (const t of [0.2, 0.5, 0.8]) {
           const px = minX + (maxX - minX) * t;
           if (pads.some(pd => Math.hypot(pd.x - px, pd.y - (maxY + 150)) < 120)) continue;
           pads.push(new Pad(px, maxY + 150, 130));
         }
-      }
+      };
+      padsUnder(PAL_YEOLIMI.Y);   // 열리미(노랑) 아래
+      padsUnder(PAL_JARANA.N);    // 자라나(남색 몸통) 아래
     }
 
     // 선풍기: 좌우 벽에서 코스를 가로질러 바람을 분다 (wind 값이 클수록 촘촘)
