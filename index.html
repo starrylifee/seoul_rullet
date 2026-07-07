@@ -77,19 +77,21 @@
   .map-row .map-grid { flex: 1; margin-top: 0; align-content: start; }
   /* ── 2단 레이아웃: 왼쪽 긴 코스 / 오른쪽 명단·설정 ── */
   .setup-body { display: flex; gap: 24px; align-items: flex-start; margin-top: 6px; }
-  .setup-left { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; }
+  .setup-left { width: 250px; flex-shrink: 0; display: flex; flex-direction: column; }
   .setup-right { flex: 1; min-width: 0; }
   #miniWrap {
     width: 100%;
     background: rgba(0,0,0,0.3);
     border: 1px solid rgba(255,255,255,0.09);
     border-radius: 14px;
-    padding: 10px;
+    padding: 8px;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
-  #miniMap { width: 100%; height: auto; border-radius: 10px; display: block; }
+  #miniMap { width: 100%; height: auto; border-radius: 10px; display: block; cursor: grab; touch-action: none; }
+  #miniMap:active { cursor: grabbing; }
   #miniName { font-size: 12.5px; font-weight: 700; color: #c3c9d5; text-align: center; }
-  .course-desc { font-size: 12.5px; line-height: 1.65; color: #9aa3b2; margin-top: 10px; }
+  .mini-hint { font-size: 11.5px; color: #6f7888; margin-top: 6px; text-align: center; }
+  .course-desc { font-size: 12.5px; line-height: 1.65; color: #9aa3b2; margin-top: 8px; }
   .course-desc b { color: #aab4ff; font-weight: 700; }
   #nameInput { height: 210px; }
   @media (max-width: 780px) {
@@ -128,12 +130,19 @@
     transition: border-color .15s, box-shadow .15s;
   }
   input[type=text]:focus { outline: none; border-color: #5b6cff; box-shadow: 0 0 0 3px rgba(91,108,255,0.22); }
-  #charGrid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 36px; }
+  #charGrid {
+    display: flex; flex-wrap: wrap; gap: 10px 12px; margin-top: 10px;
+    padding: 14px; min-height: 36px;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    max-height: 224px; overflow-y: auto;
+  }
   .char-chip {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; gap: 7px;
     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
     border-radius: 999px;
-    padding: 4px 13px 4px 9px; font-size: 13.5px; color: #d5dae4; cursor: pointer;
+    padding: 6px 15px 6px 11px; font-size: 14px; color: #d5dae4; cursor: pointer;
     user-select: none; transition: border-color .15s, background .15s, transform .1s;
   }
   .char-chip:hover { border-color: #5b6cff; background: rgba(91,108,255,0.12); transform: translateY(-1px); }
@@ -400,9 +409,10 @@
       <div class="setup-left">
         <label class="section-label">코스</label>
         <div id="miniWrap">
-          <canvas id="miniMap" width="190" height="760"></canvas>
+          <canvas id="miniMap" width="240" height="820"></canvas>
           <div id="miniName">미리보기</div>
         </div>
+        <div class="mini-hint">🖱️ 휠·드래그로 코스 안을 둘러보세요</div>
         <p class="course-desc">2026 서울교육 비전 <b>「미래를 여는 협력교육」</b>과 5대 정책방향, 캐릭터 <b>자라나·열리미</b>를 담은 연수 전용 코스.</p>
       </div>
 
@@ -1454,6 +1464,17 @@ function buildBrickArt(art, palette, cx, ty, cell) {
 function secMascotBricks(y, type) {
   const art = type === 'yeolimi' ? ART_YEOLIMI : ART_JARANA;
   const pal = type === 'yeolimi' ? PAL_YEOLIMI : PAL_JARANA;
+  if (type === 'yeolimi') {
+    // 열리미는 좌·중·우 3개 → 구슬이 반드시 하나는 맞고, 여러 번 깨지는 걸 볼 수 있다
+    const cols = art[0].length;
+    const cell = Math.min(15, (R - L - 120) / (cols * 3));
+    const w1 = cell * cols;
+    let h = 0;
+    for (const cx of [L + 60 + w1 / 2, WORLD_W / 2, R - 60 - w1 / 2]) {
+      h = buildBrickArt(art, pal, cx, y + 90, cell);
+    }
+    return y + 90 + h + 150;
+  }
   const cell = Math.min(22, (R - L - 120) / art[0].length);
   const h = buildBrickArt(art, pal, WORLD_W / 2, y + 90, cell);
   return y + 90 + h + 150;
@@ -1779,6 +1800,20 @@ function buildMap(mapDef, previewOnly) {
       }
     }
 
+    // 열리미(노랑) 벽돌 바로 아래에 트램펄린 3개 → 구슬이 튕겨 올라 열리미가 여러 번 깨지는 걸 보게 한다
+    if (mapDef.senChars) {
+      const yb = letters.filter(b => b.color === PAL_YEOLIMI.Y);
+      if (yb.length) {
+        const maxY = Math.max(...yb.map(b => b.y));
+        const minX = Math.min(...yb.map(b => b.x)), maxX = Math.max(...yb.map(b => b.x));
+        for (const t of [0.2, 0.5, 0.8]) {
+          const px = minX + (maxX - minX) * t;
+          if (pads.some(pd => Math.hypot(pd.x - px, pd.y - (maxY + 150)) < 120)) continue;
+          pads.push(new Pad(px, maxY + 150, 130));
+        }
+      }
+    }
+
     // 선풍기: 좌우 벽에서 코스를 가로질러 바람을 분다 (wind 값이 클수록 촘촘)
     const windMult = mapDef.wind || 0;
     if (windMult) {
@@ -1845,20 +1880,9 @@ function buildMap(mapDef, previewOnly) {
     }
   }
 
-  // 배경 + 장식 준비 (이어달리기는 구간별 배경의 장식을 쓴다)
+  // 배경 준비 (장식 이모지는 쓰지 않는다 — 캐릭터·구조물만 깔끔하게)
   currentBg = mapDef.bg || DEFAULT_BG;
   decorations = [];
-  for (let dy = 250; dy < fy - 300; dy += 200 + Math.random() * 150) {
-    const side = Math.random() < 0.5;
-    const zone = bgZones.find(z => dy >= z.y0 && dy < z.y1);
-    const zbg = (zone && zone.bg) || currentBg;
-    decorations.push({
-      x: side ? 75 + Math.random() * 110 : WORLD_W - 185 + Math.random() * 110,
-      y: dy,
-      emoji: zbg.deco[Math.floor(Math.random() * zbg.deco.length)],
-      size: 30 + Math.random() * 28
-    });
-  }
 
   currentMapName = `${mapDef.emoji} ${mapDef.name}`;
   $('mapLabel').textContent = currentMapName + ($('classInput').value.trim() ? ' · ' + $('classInput').value.trim() : '');
@@ -1946,13 +1970,15 @@ if ($('chainBtn')) $('chainBtn').onclick = () => {
   renderMapGrid();
 };
 
-// ---------- 미니맵 미리보기 ----------
+// ---------- 미니맵 미리보기 (가로 꽉참 + 휠·드래그 세로 탐색) ----------
+let miniDef = null, miniScale = 1, miniContentH = 0, miniScrollY = 0;
 function renderMinimap() {
   const mc = $('miniMap'), mx = mc.getContext('2d');
   mx.clearRect(0, 0, mc.width, mc.height);
   mx.fillStyle = '#0d1016';
   mx.fillRect(0, 0, mc.width, mc.height);
   mx.textAlign = 'center'; mx.textBaseline = 'middle';
+  miniDef = null;
   let def = null;
   if (chainMode) {
     if (mapChain.length < 2) {
@@ -1979,68 +2005,106 @@ function renderMinimap() {
   if (!def) { $('miniName').textContent = '미리보기'; return; }
   buildMap(def, true);   // 코스 모양만 빠르게 생성
   $('miniName').textContent = `${def.emoji || '🛠'} ${def.name}${def.secs === 'shuffle' ? ' · 매번 달라요' : ''}`;
-  const H = finishY + 400;
-  const s = Math.min((mc.width - 14) / WORLD_W, (mc.height - 14) / H);
+  miniDef = def;
+  miniScale = mc.width / WORLD_W;            // 가로 꽉차게 (코스 폭 = 캔버스 폭)
+  miniContentH = (finishY + 400) * miniScale;
+  miniScrollY = 0;
+  drawMiniViewport();
+}
+
+// 스크롤 위치에 맞춰 코스 내부를 그린다 (휠·드래그로 miniScrollY 변경 → 재호출)
+function drawMiniViewport() {
+  const mc = $('miniMap'), mx = mc.getContext('2d');
+  mx.clearRect(0, 0, mc.width, mc.height);
+  mx.fillStyle = '#0d1016';
+  mx.fillRect(0, 0, mc.width, mc.height);
+  if (!miniDef) return;
+  const s = miniScale, H = finishY + 400;
+  const maxScroll = Math.max(0, miniContentH - mc.height);
+  miniScrollY = Math.max(0, Math.min(miniScrollY, maxScroll));
   mx.save();
-  mx.translate((mc.width - WORLD_W * s) / 2, (mc.height - H * s) / 2);
+  mx.translate(0, -miniScrollY);
   mx.scale(s, s);
-  const bg = def.bg || DEFAULT_BG;
+  const bg = miniDef.bg || DEFAULT_BG;
   const g = mx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, bg.top); g.addColorStop(1, bg.bottom);
   mx.fillStyle = g;
   mx.fillRect(0, 60, WORLD_W, H - 60);
   const th = T();
   mx.lineCap = 'round';
-  mx.strokeStyle = th.wallOuter;
-  mx.lineWidth = 34;
-  for (const w of walls) {
-    mx.beginPath(); mx.moveTo(w.x1, w.y1); mx.lineTo(w.x2, w.y2); mx.stroke();
-  }
+  mx.strokeStyle = th.wallOuter; mx.lineWidth = 34;
+  for (const w of walls) { mx.beginPath(); mx.moveTo(w.x1, w.y1); mx.lineTo(w.x2, w.y2); mx.stroke(); }
   mx.strokeStyle = th.bumper;
-  for (const tw of traps) {
-    mx.beginPath(); mx.moveTo(tw.x1, tw.y1); mx.lineTo(tw.x2, tw.y2); mx.stroke();
-  }
+  for (const tw of traps) { mx.beginPath(); mx.moveTo(tw.x1, tw.y1); mx.lineTo(tw.x2, tw.y2); mx.stroke(); }
   for (const p of pegs) {
     mx.beginPath(); mx.arc(p.x, p.y, Math.max(p.r, 24), 0, Math.PI * 2);
-    mx.fillStyle = p.bouncy ? th.bumper : th.pegLine;
-    mx.fill();
+    mx.fillStyle = p.bouncy ? th.bumper : th.pegLine; mx.fill();
   }
   mx.strokeStyle = th.spinner; mx.lineWidth = 26;
-  for (const sp of spinners) {
-    mx.beginPath(); mx.arc(sp.cx, sp.cy, sp.len, 0, Math.PI * 2); mx.stroke();
-  }
-  for (const b of letters) {
-    mx.fillStyle = b.color;
-    mx.fillRect(b.x - 5, b.y - 5, b.w + 10, b.h + 10);
-  }
+  for (const sp of spinners) { mx.beginPath(); mx.arc(sp.cx, sp.cy, sp.len, 0, Math.PI * 2); mx.stroke(); }
+  for (const b of letters) { mx.fillStyle = b.color; mx.fillRect(b.x - 5, b.y - 5, b.w + 10, b.h + 10); }
   mx.fillStyle = '#e53e3e';
-  for (const e of enemies) {
-    mx.beginPath(); mx.arc(e.x, e.y, 34, 0, Math.PI * 2); mx.fill();
-  }
+  for (const e of enemies) { mx.beginPath(); mx.arc(e.x, e.y, 34, 0, Math.PI * 2); mx.fill(); }
   mx.fillStyle = '#1a1030';
-  for (const h of holes) {
-    mx.beginPath(); mx.arc(h.x, h.y, 48, 0, Math.PI * 2); mx.fill();
-  }
+  for (const h of holes) { mx.beginPath(); mx.arc(h.x, h.y, 48, 0, Math.PI * 2); mx.fill(); }
   mx.fillStyle = '#e8543f';
-  for (const pd of pads) {
-    mx.fillRect(pd.x - pd.w / 2 - 10, pd.y - 16, pd.w + 20, 32);
-  }
-  // 움직이는 도착문
+  for (const pd of pads) { mx.fillRect(pd.x - pd.w / 2 - 10, pd.y - 16, pd.w + 20, 32); }
   if (movingGate) {
-    const g = movingGate;
-    mx.strokeStyle = th.wallOuter;
+    const gg = movingGate; mx.strokeStyle = th.wallOuter;
     mx.beginPath();
-    mx.moveTo(0, g.y - g.tilt); mx.lineTo(g.x - g.gapW / 2, g.y);
-    mx.moveTo(g.x + g.gapW / 2, g.y); mx.lineTo(WORLD_W, g.y - g.tilt);
+    mx.moveTo(0, gg.y - gg.tilt); mx.lineTo(gg.x - gg.gapW / 2, gg.y);
+    mx.moveTo(gg.x + gg.gapW / 2, gg.y); mx.lineTo(WORLD_W, gg.y - gg.tilt);
     mx.stroke();
   }
-  // 결승선
   for (let x = 0; x < WORLD_W; x += 60) {
     mx.fillStyle = (x / 60) % 2 ? '#2d3748' : '#fff';
     mx.fillRect(x, finishY - 18, 60, 36);
   }
   mx.restore();
+  // 세로 스크롤바 (내용이 넘칠 때만)
+  if (maxScroll > 0) {
+    const thumbH = Math.max(28, mc.height * mc.height / miniContentH);
+    const thumbY = (miniScrollY / maxScroll) * (mc.height - thumbH);
+    mx.fillStyle = 'rgba(255,255,255,0.30)';
+    if (mx.roundRect) { mx.beginPath(); mx.roundRect(mc.width - 8, thumbY + 2, 5, thumbH - 4, 3); mx.fill(); }
+    else mx.fillRect(mc.width - 8, thumbY + 2, 5, thumbH - 4);
+  }
 }
+
+// 미니맵 휠·드래그 탐색
+(function initMiniScroll() {
+  const mc = $('miniMap');
+  if (!mc) return;
+  const pxRatio = () => { const r = mc.getBoundingClientRect(); return r.height ? mc.height / r.height : 1; };
+  const scrollable = () => miniDef && (miniContentH - mc.height) > 0;
+  mc.addEventListener('wheel', e => {
+    if (!scrollable()) return;
+    e.preventDefault();
+    miniScrollY += e.deltaY * pxRatio();
+    drawMiniViewport();
+  }, { passive: false });
+  let dragging = false, sy = 0, sScroll = 0;
+  mc.addEventListener('mousedown', e => {
+    if (!scrollable()) return;
+    dragging = true; sy = e.clientY; sScroll = miniScrollY; e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    miniScrollY = sScroll - (e.clientY - sy) * pxRatio();
+    drawMiniViewport();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  let ty = 0, tScroll = 0;
+  mc.addEventListener('touchstart', e => {
+    if (!e.touches[0]) return; ty = e.touches[0].clientY; tScroll = miniScrollY;
+  }, { passive: true });
+  mc.addEventListener('touchmove', e => {
+    if (!scrollable() || !e.touches[0]) return;
+    e.preventDefault();
+    miniScrollY = tScroll - (e.touches[0].clientY - ty) * pxRatio();
+    drawMiniViewport();
+  }, { passive: false });
+})();
 
 // ---------- 참가자 스폰 ----------
 function spawnRunners(entries) {
@@ -2935,78 +2999,24 @@ function drawBackground(viewH) {
   ctx.restore();
 }
 
-// ── 서울시교육청 캐릭터: 자라나 (흰 얼굴 + 청록 볏/후드 + 남색 몸통) ──
-function drawMascotJarana(x, y, flip) {
+// ── 서울시교육청 공식 캐릭터 이미지 (누끼 처리한 실제 이미지) ──
+const MASCOT_IMG = { jarana: new Image(), yeolimi: new Image() };
+MASCOT_IMG.jarana.src = 'jarana.png';
+MASCOT_IMG.yeolimi.src = 'yeolimi.png';
+function drawMascotImg(img, x, y, flip, h) {
+  if (!img.complete || !img.naturalWidth) return;
+  const w = h * img.naturalWidth / img.naturalHeight;
   ctx.save();
-  ctx.translate(x, y);
-  if (flip) ctx.scale(-1, 1);
-  const teal = '#17b0a6', tealD = '#0e8f86', navy = '#2f5aa8';
-  ctx.translate(0, Math.sin(performance.now() / 500 + x) * 2);
+  ctx.translate(x, y + Math.sin(performance.now() / 500 + x) * 2);
+  // 바닥 그림자
   ctx.fillStyle = 'rgba(0,0,0,0.10)';
-  ctx.beginPath(); ctx.ellipse(0, 58, 30, 8, 0, 0, Math.PI * 2); ctx.fill();
-  // 몸통(남색) + 날개
-  ctx.fillStyle = navy;
-  ctx.beginPath(); ctx.ellipse(0, 30, 26, 24, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(-24, 28, 10, 18, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(24, 28, 10, 18, -0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = teal;   // 날개 끝 청록
-  ctx.beginPath(); ctx.ellipse(-28, 38, 5, 8, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(28, 38, 5, 8, -0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#eafcf8';   // 흰 배
-  ctx.beginPath(); ctx.ellipse(0, 34, 13, 15, 0, 0, Math.PI * 2); ctx.fill();
-  // 머리: 청록 후드 + 볏
-  ctx.fillStyle = tealD;
-  ctx.beginPath(); ctx.arc(0, -8, 28, 0, Math.PI * 2); ctx.fill();
-  for (const dx of [-13, 0, 13]) {
-    ctx.beginPath();
-    ctx.moveTo(dx - 7, -30); ctx.quadraticCurveTo(dx, -52, dx + 7, -30);
-    ctx.closePath(); ctx.fill();
-  }
-  ctx.fillStyle = '#ffffff';   // 흰 얼굴
-  ctx.beginPath(); ctx.arc(0, -8, 22, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#ff9bb0';   // 볼
-  ctx.beginPath(); ctx.arc(-13, -3, 5.5, 0, Math.PI * 2); ctx.arc(13, -3, 5.5, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#2b2b3a';   // 눈
-  ctx.beginPath(); ctx.arc(-8, -11, 3.2, 0, Math.PI * 2); ctx.arc(8, -11, 3.2, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(-7, -12, 1.1, 0, Math.PI * 2); ctx.arc(9, -12, 1.1, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#2b2b3a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.arc(0, -4, 5, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, h * 0.44, w * 0.34, 8, 0, 0, Math.PI * 2); ctx.fill();
+  if (flip) ctx.scale(-1, 1);
+  ctx.drawImage(img, -w / 2, -h / 2, w, h);
   ctx.restore();
 }
-
-// ── 서울시교육청 캐릭터: 열리미 (노란 열매 + 초록 새싹 + 주황 열매) ──
-function drawMascotYeolimi(x, y, flip) {
-  ctx.save();
-  ctx.translate(x, y);
-  if (flip) ctx.scale(-1, 1);
-  const yellow = '#ffd93b', yellowD = '#f4b400', green = '#5bbf5b', greenD = '#3f9e3f', orange = '#ff8c42';
-  ctx.translate(0, Math.sin(performance.now() / 500 + x) * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.10)';
-  ctx.beginPath(); ctx.ellipse(0, 56, 30, 8, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = greenD; ctx.lineWidth = 4; ctx.lineCap = 'round';   // 줄기
-  ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(0, -44); ctx.stroke();
-  ctx.fillStyle = green;   // 잎
-  ctx.beginPath(); ctx.ellipse(-9, -44, 10, 5.5, -0.6, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(9, -44, 10, 5.5, 0.6, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = yellow;   // 노란 몸
-  ctx.beginPath(); ctx.ellipse(0, 10, 30, 34, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = yellowD; ctx.lineWidth = 2.5;
-  ctx.beginPath(); ctx.ellipse(0, 10, 30, 34, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.fillStyle = '#fffdf0';   // 흰 얼굴
-  ctx.beginPath(); ctx.ellipse(0, 6, 19, 18, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#ffb0a8';   // 볼
-  ctx.beginPath(); ctx.arc(-12, 9, 5, 0, Math.PI * 2); ctx.arc(12, 9, 5, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#3a2b1a'; ctx.lineWidth = 2.4;   // 웃는 눈
-  ctx.beginPath(); ctx.arc(-7, 3, 3.4, 1.1 * Math.PI, 1.9 * Math.PI); ctx.stroke();
-  ctx.beginPath(); ctx.arc(7, 3, 3.4, 1.1 * Math.PI, 1.9 * Math.PI); ctx.stroke();
-  ctx.beginPath(); ctx.arc(0, 8, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();   // 입
-  ctx.fillStyle = orange;   // 주황 열매
-  ctx.beginPath(); ctx.arc(26, 34, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = greenD; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(26, 27); ctx.lineTo(23, 22); ctx.stroke();
-  ctx.restore();
-}
+function drawMascotJarana(x, y, flip) { drawMascotImg(MASCOT_IMG.jarana, x, y, flip, 150); }
+function drawMascotYeolimi(x, y, flip) { drawMascotImg(MASCOT_IMG.yeolimi, x, y, flip, 150); }
 
 // ── 비전 배너: "미래를 여는 협력교육" + 3대 지표(꿈·긍지·신뢰) ──
 function drawSenBanner() {
