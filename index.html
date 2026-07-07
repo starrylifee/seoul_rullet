@@ -84,6 +84,11 @@
   }
   #miniMap { width: 200px; border-radius: 10px; display: block; }
   #miniName { font-size: 12.5px; font-weight: 600; color: #9aa3b2; }
+  #courseRow { display: flex; gap: 18px; align-items: stretch; margin-top: 8px; }
+  #courseInfo { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .course-title { font-size: 20px; font-weight: 800; color: #e8eaf0; margin-bottom: 10px; }
+  .course-desc { font-size: 14px; line-height: 1.7; color: #9aa3b2; max-width: 560px; }
+  .course-desc b { color: #aab4ff; font-weight: 700; }
   .title {
     text-align: center;
     font-size: 40px; font-weight: 800;
@@ -249,12 +254,13 @@
     background: rgba(15,18,24,0.72); border: 1px solid rgba(255,255,255,0.12);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     border-radius: 14px;
-    padding: 12px 16px; min-width: 160px; max-height: 66vh; overflow-y: auto;
+    padding: 14px 20px; min-width: 230px; max-height: 74vh; overflow-y: auto;
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   }
-  #rankPanel h3 { font-size: 12px; font-weight: 700; color: #9aa3b2; letter-spacing: 0.5px; margin-bottom: 6px; }
-  #rankList { list-style: none; font-size: 13.5px; line-height: 1.9; color: #e8eaf0; }
-  #rankList li.winner-line { font-weight: 700; color: #fbbf24; }
+  #rankPanel h3 { font-size: 16px; font-weight: 800; color: #cbd3e0; letter-spacing: 0.5px; margin-bottom: 8px; }
+  #rankList { list-style: none; font-size: 21px; font-weight: 600; line-height: 1.75; color: #f2f4f8; }
+  #rankList li:first-child { font-size: 26px; font-weight: 800; color: #ffd76a; }
+  #rankList li.winner-line { font-weight: 800; color: #fbbf24; }
 
   /* ===== 당첨 발표 ===== */
   #winnerOverlay {
@@ -378,23 +384,16 @@
     <div class="title">서울룰렛</div>
     <div class="subtitle" id="subtitleText">서울시교육청 뽑기판</div>
 
-    <div class="two-col">
-      <div>
-        <label class="section-label">우리 반 이름</label>
-        <input type="text" id="classInput" placeholder="예: 3학년 5반">
-      </div>
-      <div>
-        <label class="section-label">학교 영어 이름 (깨기 블록용)</label>
-        <input type="text" id="schoolInput" placeholder="예: SEOUL" maxlength="12">
-        <div class="hint">맵에 알파벳 블록으로 나와요. 부딪히면 깨져요!</div>
-      </div>
+    <div>
+      <label class="section-label">우리 반 이름 (선택)</label>
+      <input type="text" id="classInput" placeholder="예: 3학년 5반">
     </div>
 
     <div class="row-between">
       <label class="section-label" for="nameInput">참가자 이름 (한 줄에 한 명)</label>
       <button class="small-btn" id="clearBtn">전체 지우기</button>
     </div>
-    <textarea id="nameInput" placeholder="김민준&#10;이서연&#10;박지호&#10;최하은&#10;&#10;이름*3 처럼 쓰면 3번 나와요"></textarea>
+    <textarea id="nameInput" placeholder="1&#10;2&#10;3&#10;&#10;번호나 이름 · 이름*3 처럼 쓰면 3번 나와요"></textarea>
     <div class="hint"><b>이름*3</b> 처럼 쓰면 그 학생 캐릭터가 3개 나와서 당첨 확률이 높아져요.</div>
     <div id="excludedRow" style="display:none;">
       <span class="hint" style="font-weight:600;">이번 추첨에서 제외:</span>
@@ -417,18 +416,15 @@
       <div id="charGrid"></div>
     </div>
 
-    <div class="row-between">
-      <label class="section-label">맵 고르기</label>
-      <div style="display:flex; gap:8px;">
-        <button class="small-btn" id="chainBtn">🔗 이어달리기</button>
-        <button class="small-btn" id="openEditorBtn">맵 편집기</button>
-      </div>
-    </div>
-    <div class="map-row">
-      <div class="map-grid" id="mapGrid"></div>
+    <label class="section-label">코스</label>
+    <div id="courseRow">
       <div id="miniWrap">
         <canvas id="miniMap" width="200" height="330"></canvas>
         <div id="miniName">미리보기</div>
+      </div>
+      <div id="courseInfo">
+        <div class="course-title">🌱 서울교육 협력의 길</div>
+        <p class="course-desc">2026 서울교육 비전 <b>「미래를 여는 협력교육」</b>과 5대 정책방향, 서울시교육청 캐릭터 <b>자라나·열리미</b>를 담은 연수 전용 코스예요. 구슬이 키워드·캐릭터 벽돌을 깨며 결승선까지 달립니다.</p>
       </div>
     </div>
 
@@ -462,8 +458,8 @@
       </div>
     </div>
 
-    <label class="section-label">결과 화면 옵션 <span class="hint" style="display:inline;">— 안 고르면 추첨(순위)만 나와요</span></label>
-    <div class="check-row">
+    <!-- 연수용: 결과는 추첨 순서만 보여준다 (조·자리 배치 숨김) -->
+    <div style="display:none;">
       <label class="check-item"><input type="checkbox" id="optTeams"> 조(모둠) 배치</label>
       <label class="check-item"><input type="checkbox" id="optSeats"> 자리 배치</label>
     </div>
@@ -609,7 +605,13 @@ const RUNNER_R = 17;
 const L = 45, R = WORLD_W - 45;
 const EMOJI_POOL = ['🐰','🐶','🐱','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐤','🐧','🦉','🦄','🐢','🐙','🦖','🐳','🦋','🐞','🐿️','🦔','🐹','🐭','🐦','🦕','🐬','🦩','🦜'];
 const COLOR_POOL = ['#fbb6ce','#fbd38d','#9ae6b4','#90cdf4','#d6bcfa','#feb2b2','#fefcbf','#b2f5ea','#c3dafe','#fed7e2','#c6f6d5','#bee3f8'];
-const LS_KEY = 'seoul-edu-roulette-v1';
+const LS_KEY = 'seoul-edu-roulette-v2';
+
+// ─── 연수 접속 모드 자리 (추후 구현 — Firebase Realtime Database 예정) ───
+// 계획: 진행자가 "연수 모드"를 켜면 방 코드+QR 표시 → 참가자가 ?join=코드 로
+// 접속해 이름 등록 → rooms/{code}/names 실시간 구독 → "명단 가져오기"로
+// 참가자 입력란 자동 채움. 서버 코드 없이 SDK만으로 구현 가능.
+const TRAINING_MODE = { enabled: false, firebaseConfig: null };
 
 // ---------- 저장/불러오기 ----------
 function loadState() {
@@ -638,7 +640,7 @@ let bgmOn = true;
 let excluded = [];   // 이번 추첨에서 제외된 학생 (당첨자 빼고 다시)
 let charMap = {};
 let speedMult = 1;
-let mapChoice = 'random';
+let mapChoice = 'seonedu';   // 서울교육 맵 기본 선택 (맵이 하나뿐이라 랜덤 없음)
 let chainMode = false;   // 이어달리기: 맵 2~3개를 한 코스로 연결
 let mapChain = [];       // 이어달리기로 고른 맵 id 순서
 let teamSize = 5;
@@ -664,9 +666,14 @@ const THEMES = {
 function T() { return THEMES[theme] || THEMES.flat; }
 
 // ---------- 초기 상태 복원 ----------
+// 기본 참가자: 1~20 번호 (사용자가 그대로 수정해서 쓸 수 있게)
+function defaultRoster() {
+  return Array.from({ length: 20 }, (_, i) => i + 1).join('\n');
+}
 (function restore() {
   const s = loadState();
-  if (s.names) nameInput.value = s.names;
+  // 저장된 값이 있으면 그대로, 처음이면 1~20 기본 명단
+  nameInput.value = (s.names !== undefined) ? s.names : defaultRoster();
   if (s.mode) mode = s.mode;
   if (s.winnerCount) winnerCount = s.winnerCount;
   if (s.winnerStart) winnerStart = s.winnerStart;
@@ -685,7 +692,6 @@ function T() { return THEMES[theme] || THEMES.flat; }
   $('optTeams').checked = !!s.useTeams;
   $('optSeats').checked = !!s.useSeats;
   $('classInput').value = s.className || '';
-  $('schoolInput').value = (s.schoolName !== undefined) ? s.schoolName : 'SEOUL';
   applyThemeClass();
   updateModeButtons(); updateThemeButtons(); updateSoundButton(); updateBgmButton();
   updateSubtitle(); updateCharsButtons(); updateWinnerCountLabel(); renderExcluded();
@@ -813,10 +819,6 @@ function renderCharGrid() {
 // ---------- 설정 이벤트 ----------
 nameInput.addEventListener('input', () => { saveState({ names: nameInput.value }); renderCharGrid(); });
 $('classInput').addEventListener('input', () => { saveState({ className: $('classInput').value }); updateSubtitle(); });
-$('schoolInput').addEventListener('input', () => {
-  $('schoolInput').value = $('schoolInput').value.toUpperCase().replace(/[^A-Z ]/g, '');
-  saveState({ schoolName: $('schoolInput').value });
-});
 $('clearBtn').onclick = () => {
   if (confirm('참가자 이름을 모두 지울까요?')) {
     nameInput.value = '';
@@ -1191,11 +1193,12 @@ const PIXEL_FONT = {
 let letterLog = [];        // spawnPixelLetter 호출 기록 (편집기 변환용)
 let lastSectionRange = null; // 섹션이 만든 오브젝트 범위 (편집기 변환용)
 
-// A-Z 픽셀 폰트에 없는 글자(한글 등)는 캔버스에 그려 모양을 샘플링해 8×8 격자로 변환
+// A-Z 픽셀 폰트에 없는 글자(한글 등)는 캔버스에 그려 모양을 샘플링해 격자로 변환
+// 한글은 획이 복잡해 고해상도(14×14)로 떠야 뭉치지 않고 읽힌다
 const GLYPH_CACHE = {};
-function glyphGrid(ch) {
-  if (GLYPH_CACHE[ch]) return GLYPH_CACHE[ch];
-  const G = 8, S = 32;
+function glyphGrid(ch, G = 14, S = 56, thresh = 50) {
+  const key = ch + '_' + G + '_' + thresh;
+  if (GLYPH_CACHE[key]) return GLYPH_CACHE[key];
   const cv = document.createElement('canvas');
   cv.width = cv.height = S;
   const g = cv.getContext('2d');
@@ -1212,20 +1215,20 @@ function glyphGrid(ch) {
       const y0 = (ry * S / G) | 0, y1 = ((ry + 1) * S / G) | 0;
       for (let yy = y0; yy < y1; yy++)
         for (let xx = x0; xx < x1; xx++) { sum += px[(yy * S + xx) * 4 + 3]; cnt++; }
-      line += (sum / cnt > 55) ? '#' : '.';
+      line += (sum / cnt > thresh) ? '#' : '.';
     }
     rows.push(line);
   }
-  GLYPH_CACHE[ch] = rows;
+  GLYPH_CACHE[key] = rows;
   return rows;
 }
 
 // 글자 하나를 작은 블록 무더기로 만들기 (중심 x, 위쪽 y 기준)
-function spawnPixelLetter(ch, cx, ty, cell) {
+function spawnPixelLetter(ch, cx, ty, cell, col) {
   const font = PIXEL_FONT[ch] || glyphGrid(ch);
   if (!font) return 0;
   letterLog.push({ ch, cx, ty });
-  const color = COLOR_POOL[ch.charCodeAt(0) % COLOR_POOL.length];
+  const color = col || COLOR_POOL[ch.charCodeAt(0) % COLOR_POOL.length];
   const cols = font[0].length;
   const lx = cx - cell * cols / 2;
   font.forEach((line, ry) => {
@@ -1270,6 +1273,49 @@ function secNameScatter(y, schoolName) {
   }
   return y + 90 + 3 * 250 + 60;
 }
+// ── 서울교육 브랜드 색 (2026 주요업무 정책방향 부채꼴 색상) ──
+const SEN_KW = {
+  '협력교육':   '#0e8f86',   // 비전 (청록)
+  '맞춤형교육': '#1b3a8b',   // 모두를 위한 (남색)
+  '미래역량':   '#d0463a',   // 창의와 상생의 (빨강)
+  '교육공동체': '#3aa0c4',   // 자치와 참여의 (하늘)
+  '행복한학교': '#e5872a',   // 안전하고 (주황)
+  '찾아가는행정': '#1f7a5a', // 공감과 소통의 (초록)
+};
+// 서울교육 키워드를 화면 가로에 맞춰 브랜드 색 블록으로 깐다 (구슬이 부딪혀 깨는 관문)
+// 한글이 뭉치지 않게 고해상도(14×14) 글리프 + 글자 사이 넉넉한 간격으로 큼직하게 배치
+const KW_GLYPH = 18;      // 글리프 해상도 (열 수) — 높을수록 획이 또렷·분리
+const KW_THRESH = 88;     // 채움 임계값 — 높을수록 획이 얇아져 획 사이 간격이 벌어진다
+function secKeyword(y, text) {
+  const chs = [...text.replace(/\s/g, '')];
+  if (!chs.length) return secPegs(y, 3);
+  const color = SEN_KW[text] || '#0e8f86';
+  const n = chs.length;
+  const gap = 3;                                   // 글자 사이 빈 칸(셀 단위) → 글자끼리 안 붙게
+  const unit = KW_GLYPH + gap;
+  const cell = Math.min(11, (R - L - 24) / (n * unit));
+  const charW = cell * unit;
+  const totalW = n * charW;
+  const x0 = (WORLD_W - totalW) / 2 + charW / 2;
+  const yy = y + 130;
+  const start = letters.length;
+  chs.forEach((ch, k) => spawnKeywordChar(ch, x0 + k * charW, yy, cell, color));
+  for (let i = start; i < letters.length; i++) letters[i].fragile = true;
+  return yy + cell * KW_GLYPH + 200;
+}
+// 한글 한 글자를 고해상도 격자 블록으로 (중심 cx, 위 ty 기준)
+// 블록을 셀보다 작게 그려(획 사이 여백) 획이 뭉치지 않고 또렷하게 보이도록
+function spawnKeywordChar(ch, cx, ty, cell, color) {
+  const font = glyphGrid(ch, KW_GLYPH, KW_GLYPH * 5, KW_THRESH);
+  const cols = font[0].length;
+  const lx = cx - cell * cols / 2;
+  const bs = Math.max(3, cell - 1.5);
+  font.forEach((line, ry) => {
+    [...line].forEach((c, ci) => {
+      if (c === '#') letters.push(new LetterBlock(lx + ci * cell, ty + ry * cell, bs, bs, ch, 1, color));
+    });
+  });
+}
 function secEnemies(y, count = 3, emojiSet = ['👾','🤖','👻']) {
   for (let i = 0; i < count; i++) {
     const yy = y + 100 + i * 260;
@@ -1301,38 +1347,19 @@ function secGates(y, rows = 3) {
 // 각 맵은 시그니처 섹션 위주로 구성 + 도착문 스타일(finish)도 맵 개성의 일부
 // finish: center(중앙 깔때기) | sides(양옆 두 문) | moving(움직이는 문) | corner(왼쪽 구석)
 const MAPS = [
-  { id: 'classic',  name: '클래식 콩콩숲', emoji: '🌳', secs: ['pegs6', 'pegs4', 'pegs6', 'bumpers', 'pegs6', 'pegs4'], finish: 'center', wind: 1,
-    bg: { top: '#9fdcaa', bottom: '#e8f8d8', deco: ['🌲','🌳','🍄','🌼','🐿️'], cloud: true } },
-  { id: 'windmill', name: '바람개비 왕국', emoji: '🌀', secs: ['spinners', 'spinnersBig', 'pegs3', 'spinners', 'spinnersBig', 'spinners'], finish: 'center',
-    bg: { top: '#c3b3f2', bottom: '#f2ebff', deco: ['🎡','🌷','🦋','🌀'], cloud: true } },
-  { id: 'letters',  name: '학교이름 깨기', emoji: '🔤', secs: ['letters', 'names', 'letters', 'names', 'letters', 'names', 'letters'], finish: 'corner',
-    bg: { top: '#2e6b50', bottom: '#47936f', deco: ['✏️','📚','🎒','🏫','📐'] } },
-  { id: 'alien',    name: '외계인 침공',   emoji: '👾', secs: ['pegs3', 'enemiesA', 'zigzag', 'enemiesA', 'pegs3', 'enemiesA', 'ramps'], finish: 'moving',
-    bg: { top: '#0d0d33', bottom: '#31315e', deco: ['⭐','🪐','🛸','✨','🌟','🌙'] } },
-  { id: 'slide',    name: '지그재그 미끄럼틀', emoji: '🛝', secs: ['zigzagT', 'ramps', 'zigzagT', 'ramps', 'zigzagT', 'ramps', 'zigzagT'], finish: 'sides', wind: 1,
-    bg: { top: '#ffd28f', bottom: '#fff4d8', deco: ['☀️','🛝','⚽','🌈','🪁'], cloud: true } },
-  { id: 'bumper',   name: '슈퍼 튕튕 나라', emoji: '⭐', secs: ['bumpers', 'pegs6', 'bumpers', 'zigzag', 'bumpers', 'ramps', 'bumpers'], finish: 'sides',
-    bg: { top: '#ffbcd9', bottom: '#ffeaf4', deco: ['🍭','🍬','🧁','🍩','🍪'] } },
-  { id: 'gates',    name: '좁은 문 대작전', emoji: '🚪', secs: ['gates', 'pegs4', 'gates', 'spinners', 'gates', 'ramps', 'gates'], finish: 'moving',
-    bg: { top: '#b9c3d4', bottom: '#e6eaf2', deco: ['🏰','🛡️','🚩','⚔️'] } },
-  { id: 'vortex',   name: '회오리 소용돌이', emoji: '🌪', secs: ['vortex', 'pegs3', 'vortex', 'spinners', 'vortex'], finish: 'center',
-    bg: { top: '#1f3a5c', bottom: '#3f6d8e', deco: ['🌪','🌀','💨','🍃','☁️'] } },
-  { id: 'snake',    name: '좌우 뱀길',      emoji: '🐍', secs: ['serpentineT', 'pegs3', 'serpentineT', 'bumpers', 'serpentineT', 'serpentineT'], finish: 'cornerR', wind: 1,
-    bg: { top: '#7fb069', bottom: '#d8f3c1', deco: ['🐍','🌿','🍀','🐛','🌾'], cloud: true } },
-  { id: 'windy',  name: '태풍의 언덕', emoji: '🌬️', secs: ['pegs3', 'serpentine', 'pegs4', 'zigzag', 'serpentine', 'pegs3'], finish: 'sides', wind: 3,
-    bg: { top: '#8fc9dd', bottom: '#eef9ff', deco: ['🌬️','🍃','🪁','☁️','🌫️'], cloud: true } },
-  { id: 'banana', name: '바나나 대소동', emoji: '🍌', secs: ['ramps', 'zigzag', 'serpentine', 'ramps', 'zigzag', 'ramps'], finish: 'sides', banana: true,
-    bg: { top: '#ffe9a8', bottom: '#fff8e1', deco: ['🍌','🐒','🌴','🥥'], cloud: true } },
-  { id: 'slime',  name: '슬라임 늪',    emoji: '🟢', secs: ['pegs3', 'zigzag', 'serpentine', 'pegs4', 'zigzag', 'pegs3'], finish: 'center', slime: true,
-    bg: { top: '#88c9a1', bottom: '#c9f2d0', deco: ['🟢','🧪','💧','🍀'] } },
-  { id: 'mix',      name: '뒤죽박죽 랜덤',  emoji: '🎲', secs: 'shuffle', finish: 'shuffle', wind: 1,
-    bg: { top: '#ffe29a', bottom: '#c4f0ff', deco: ['🎲','❓','🎈','🎪','🎁'], cloud: true } },
-  { id: 'full',     name: '풀코스 마라톤',  emoji: '🏃', secs: ['pegs4', 'zigzag', 'letters', 'spinners', 'enemiesA', 'gates', 'bumpers', 'ramps', 'pegs4'], finish: 'moving', wind: 1,
-    bg: { top: '#93d4ff', bottom: '#ffd9ec', deco: ['🏁','🎯','🌈','⭐','🔥'], cloud: true } },
+  // ★ 서울시교육청 전용 맵 — 2026 서울교육 비전·정책방향·캐릭터를 코스에 담았다
+  { id: 'seonedu', name: '서울교육 협력의 길', emoji: '🌱',
+    secs: ['kw:협력교육', 'pegs4', 'mascot:jarana', 'kw:맞춤형교육', 'spinners', 'kw:미래역량',
+           'bumpers', 'mascot:yeolimi', 'kw:교육공동체', 'zigzag', 'kw:행복한학교', 'ramps',
+           'kw:찾아가는행정', 'pegs3', 'vortex'],
+    finish: 'center', wind: 1, noDouble: true, senChars: true,
+    bg: { top: '#7ad0cb', bottom: '#eefbf6', deco: ['📚','✏️','🎒','🏫','🌱','🖍️'], cloud: true } },
 ];
 const DEFAULT_BG = { top: '#aee3ff', bottom: '#eafaf1', deco: ['🌼','🦋','🌈'], cloud: true };
 
 function runSection(key, y, schoolName) {
+  if (key.startsWith('kw:')) return secKeyword(y, key.slice(3));
+  if (key.startsWith('mascot:')) return secMascotBricks(y, key.slice(7));
   switch (key) {
     case 'pegs3': return secPegs(y, 3);
     case 'pegs4': return secPegs(y, 4);
@@ -1359,6 +1386,69 @@ let currentMapName = '';
 let currentBg = null;
 let decorations = [];
 let bgZones = [];   // 이어달리기: 구간별 배경 (y0~y1에 해당 맵 배경)
+let senActive = false;   // 서울교육 맵일 때 캐릭터·비전 배너 표시
+let mascots = [];        // 코스 옆을 따라 배치되는 자라나/열리미 (월드 좌표)
+
+// ── 서울시교육청 캐릭터 픽셀 아트 (벽돌깨기 관문용) ──
+// 실제 캐릭터 배색을 그대로: 자라나=흰 얼굴+청록 볏/후드+남색 몸통, 열리미=노란 몸+초록 새싹+주황 열매
+const PAL_JARANA = { T: '#17b0a6', N: '#2f5aa8', W: '#f4fffd', E: '#2b2b3a', P: '#ff9bb0' };
+const ART_JARANA = [
+  '....T..T....',   // 볏 두 갈래
+  '....TTTT....',
+  '...TTTTTT...',   // 청록 후드
+  '..TWWWWWWT..',   // 흰 얼굴 (양옆 후드)
+  '..TWWWWWWT..',
+  '..TWEWWEWT..',   // 눈
+  '..TWPWWPWT..',   // 분홍 볼
+  '...WWWWWW...',
+  '...NNNNNN...',   // 남색 몸통
+  '..NNNNNNNN..',
+  '.TNNNWWNNNT.',   // 청록 날개끝 + 흰 배
+  '.TNNWWWWNNT.',
+  '..NNWWWWNN..',
+  '..NNNNNNNN..',
+  '...NN..NN...',   // 발
+];
+const PAL_YEOLIMI = { Y: '#ffd93b', G: '#5bbf5b', W: '#fffdf0', E: '#3a2b1a', P: '#ffb0a8', O: '#ff8c42' };
+const ART_YEOLIMI = [
+  '...G....G...',   // 새싹 잎
+  '....G..G....',
+  '.....GG.....',   // 줄기
+  '....YYYY....',   // 노란 몸
+  '...YYYYYY...',
+  '..YYYYYYYY..',
+  '..YWWWWWWY..',   // 흰 얼굴
+  '..YWEWWEWY..',   // 눈
+  '..YWPWWPWY..',   // 분홍 볼
+  '..YYWWWWYY..',
+  '..YYYYYYYY..',
+  '...YYYYYY...',
+  '....YYYY.O..',   // 주황 열매
+  '.....YY.OO..',
+];
+// 픽셀 아트를 깨지는 블록 무더기로 (가로 중앙 cx, 위쪽 ty 기준)
+function buildBrickArt(art, palette, cx, ty, cell) {
+  const cols = art[0].length;
+  const lx = cx - cell * cols / 2;
+  art.forEach((line, ry) => {
+    [...line].forEach((c, ci) => {
+      if (c === '.') return;
+      const col = palette[c] || '#cccccc';
+      const blk = new LetterBlock(lx + ci * cell, ty + ry * cell, cell - 2, cell - 2, c, 1, col);
+      blk.fragile = true;
+      letters.push(blk);
+    });
+  });
+  return cell * art.length;
+}
+// 자라나/열리미 모양 벽돌깨기 관문 (구슬이 캐릭터를 깨고 지나간다)
+function secMascotBricks(y, type) {
+  const art = type === 'yeolimi' ? ART_YEOLIMI : ART_JARANA;
+  const pal = type === 'yeolimi' ? PAL_YEOLIMI : PAL_JARANA;
+  const cell = Math.min(22, (R - L - 120) / art[0].length);
+  const h = buildBrickArt(art, pal, WORLD_W / 2, y + 90, cell);
+  return y + 90 + h + 150;
+}
 
 function shuffleSecs() {
   const all = ['pegs4', 'pegs6', 'zigzag', 'ramps', 'serpentine', 'vortex', 'spinners', 'bumpers', 'letters', 'enemiesA', 'gates'];
@@ -1385,8 +1475,12 @@ function spotClear(x, y, rad) {
 // → 아이템·블랙홀을 그 길 위에만 놓기 위한 사전 시뮬레이션
 const FLOW_CELL = 60;
 function probeFlow(fy) {
-  const visited = new Set();
-  const mark = (x, y) => visited.add(((x / FLOW_CELL) | 0) + ',' + ((y / FLOW_CELL) | 0));
+  // 셀별 방문 횟수(통행량)를 센다 → 붐비는 길 vs 어쩌다 스치는 길 구분
+  const counts = new Map();
+  const mark = (x, y) => {
+    const k = ((x / FLOW_CELL) | 0) + ',' + ((y / FLOW_CELL) | 0);
+    counts.set(k, (counts.get(k) || 0) + 1);
+  };
   const dt = 1 / 40;
   for (let p = 0; p < 44; p++) {
     const r = { x: 350 + Math.random() * 200, y: 360 + Math.random() * 40,
@@ -1409,17 +1503,43 @@ function probeFlow(fy) {
       mark(r.x, r.y);
     }
   }
-  return visited;
+  return counts;
 }
-function makeReachable(visited) {
-  if (visited.size < 40) return () => true;   // 프로브가 실패한 특이 맵은 기존 방식대로
+// minCount: 이 정도 이상 통행한 셀만 "구슬이 잘 찾아가는 곳"으로 인정 (기본 1 = 한 번이라도 지나감)
+function makeReachable(counts, minCount = 1) {
+  if (counts.size < 40) return () => true;   // 프로브가 실패한 특이 맵은 기존 방식대로
   return (x, y, slack) => {
     const cx = (x / FLOW_CELL) | 0, cy = (y / FLOW_CELL) | 0;
     for (let dx = -slack; dx <= slack; dx++)
-      for (let dy = -slack; dy <= slack; dy++)
-        if (visited.has((cx + dx) + ',' + (cy + dy))) return true;
+      for (let dy = -slack; dy <= slack; dy++) {
+        const c = counts.get((cx + dx) + ',' + (cy + dy));
+        if (c && c >= minCount) return true;
+      }
     return false;
   };
+}
+// 통행량 분포에서 상위 구간 문턱값 (frac=0.5 → 중앙값). 아이템·트램펄린을 붐비는 길에만 놓기 위함
+function trafficThreshold(counts, frac) {
+  const vals = [...counts.values()].sort((a, b) => a - b);
+  if (!vals.length) return 1;
+  return Math.max(4, vals[Math.min(vals.length - 1, Math.floor(vals.length * frac))]);
+}
+// 맵 중간중간 넓게 빈 공간에 바람개비(스피너)를 채운다 — 구슬이 다니는 길 위에만
+function addFillerSpinners(fy, counts) {
+  const onPath = makeReachable(counts, 2);
+  const target = Math.max(3, Math.floor((fy - 900) / 1300));
+  let placed = 0, guard = 0;
+  while (placed < target && guard++ < target * 140) {
+    const sx = 180 + Math.random() * (WORLD_W - 360);
+    const sy = 850 + Math.random() * Math.max(400, fy - 1700);
+    if (!spotClear(sx, sy, 200)) continue;                 // 넓게 비어 있는 곳만
+    if (!onPath(sx, sy, 2)) continue;                      // 구슬이 지나가는 길 위
+    if (spinners.some(s => Math.hypot(s.cx - sx, s.cy - sy) < 360)) continue;
+    const arms = Math.random() < 0.5 ? 2 : 3;
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    spinners.push(new Spinner(sx, sy, 120 + Math.random() * 45, dir * (1.8 + Math.random() * 0.9), arms, 12, 3));
+    placed++;
+  }
 }
 
 // 움직이는 도착문 (moving 스타일일 때만 사용)
@@ -1504,7 +1624,7 @@ function buildMap(mapDef, previewOnly) {
     y = OY + (mapDef.height || 3500);
   } else if (mapDef.chain) {
     // 이어달리기: 각 맵의 구간을 순서대로 이어 붙이고, 배경도 구간별로 기록
-    const schoolName = $('schoolInput').value.trim();
+    const schoolName = '';
     mapDef.chain.forEach(d => {
       const z0 = y;
       const ss = d.secs === 'shuffle' ? shuffleSecs() : d.secs;
@@ -1513,8 +1633,11 @@ function buildMap(mapDef, previewOnly) {
     });
   } else {
     let secs = mapDef.secs;
-    if (secs === 'shuffle') secs = shuffleSecs();
-    const schoolName = $('schoolInput').value.trim();
+    // 연수용: 코스 길이 2배 (랜덤 맵은 두 번 다르게 뽑아서 이어 붙인다)
+    // noDouble 맵(서울교육 맵 등)은 이미 충분히 길어 중복하지 않는다
+    if (secs === 'shuffle') secs = shuffleSecs().concat(shuffleSecs());
+    else if (!mapDef.noDouble) secs = secs.concat(secs);
+    const schoolName = '';
     secs.forEach(k => { y = runSection(k, y, schoolName); });
   }
   // 섹션이 만든 오브젝트 범위 기록 (편집기 "기본 맵 불러오기" 변환용)
@@ -1544,17 +1667,23 @@ function buildMap(mapDef, previewOnly) {
     const manualHoles = holes.length > 0;
     const manualPads = pads.length > 0;
 
-    // 구슬이 실제로 지나가는 길 기록 (아이템·블랙홀 배치용)
-    const reachable = makeReachable(probeFlow(fy));
+    // 1차 프로브: 구슬 흐름 파악
+    let flow = probeFlow(fy);
+    // 빈 공간에 바람개비 채우기 → 흐름이 바뀌었으니 다시 프로브
+    if (mapDef.senChars) { addFillerSpinners(fy, flow); flow = probeFlow(fy); }
+    const reachable = makeReachable(flow);
+    // 아이템·트램펄린은 "붐비는 길"에만 (저확률로 스치는 곳 제외)
+    const busyMin = trafficThreshold(flow, 0.6);
+    const reachableBusy = makeReachable(flow, busyMin);
 
-    // 아이템 뿌리기 (분신술 🪄 / 커지기 🍄) — 벽·기둥에 안 겹치고, 구슬이 지나가는 길 위에만
+    // 아이템 뿌리기 (분신술 🪄 / 커지기 🍄) — 벽·기둥에 안 겹치고, 구슬이 자주 지나가는 길에만
     const itemCount = Math.max(8, Math.floor((fy - 500) / 320));
     let placed = 0, guard = 0;
     while (placed < itemCount && guard++ < itemCount * 90) {
       const ix = 130 + Math.random() * (WORLD_W - 260);
       const iy = 520 + ((placed + Math.random()) / itemCount) * (fy - 1150);
       if (!spotClear(ix, iy, 62)) continue;
-      if (!reachable(ix, iy, 1)) continue;
+      if (!reachableBusy(ix, iy, 1)) continue;
       items.push(new Item(ix, iy,
         ['clone', 'grow', 'bomb', 'slow', 'clone', 'mag', 'grow', 'stun', 'bomb'][placed % 9]));
       placed++;
@@ -1596,7 +1725,7 @@ function buildMap(mapDef, previewOnly) {
       const px = 170 + Math.random() * (WORLD_W - 340);
       const py = 950 + ((pPlaced + Math.random()) / padCount) * Math.max(500, fy - 2200);
       if (!spotClear(px, py, 80)) continue;
-      if (!reachable(px, py, 1)) continue;
+      if (!reachableBusy(px, py, 1)) continue;
       if (holes.some(h => Math.hypot(h.x - px, h.y - py) < 260)) continue;
       if (items.some(it => Math.hypot(it.x - px, it.y - py) < 110)) continue;
       if (pads.some(pd => Math.hypot(pd.x - px, pd.y - py) < 380)) continue;
@@ -1616,6 +1745,7 @@ function buildMap(mapDef, previewOnly) {
         const t = 0.4 + Math.random() * 0.3;
         const px = w.x1 + (w.x2 - w.x1) * t;
         const py = w.y1 + (w.y2 - w.y1) * t - 15;   // 경사면 바로 위에 얹는다
+        if (!reachableBusy(px, py, 1)) continue;     // 저확률 경사엔 놓지 않는다
         if (pads.some(pd => Math.hypot(pd.x - px, pd.y - py) < 300)) continue;
         if (holes.some(h => Math.hypot(h.x - px, h.y - py) < 200)) continue;
         pads.push(new Pad(px, py, 110));
@@ -1633,7 +1763,7 @@ function buildMap(mapDef, previewOnly) {
           const py = h.y + 250 + Math.random() * 90;
           if (px < L + 120 || px > R - 120) continue;
           if (!spotClear(px, py, 70)) continue;
-          if (!reachable(px, py, 2)) continue;
+          if (!reachableBusy(px, py, 2)) continue;
           pads.push(new Pad(px, py));
           break outer;
         }
@@ -1690,6 +1820,22 @@ function buildMap(mapDef, previewOnly) {
     }
   }
 
+  // 서울교육 맵: 자라나·열리미를 코스 양옆을 따라 번갈아 세워둔다 (배경 캐릭터)
+  senActive = !!mapDef.senChars;
+  mascots = [];
+  if (senActive) {
+    let idx = 0;
+    for (let my = 720; my < fy - 300; my += 880) {
+      mascots.push({
+        x: idx % 2 === 0 ? 96 : WORLD_W - 96,
+        y: my,
+        type: idx % 2 === 0 ? 'jarana' : 'yeolimi',
+        flip: idx % 2 !== 0,
+      });
+      idx++;
+    }
+  }
+
   // 배경 + 장식 준비 (이어달리기는 구간별 배경의 장식을 쓴다)
   currentBg = mapDef.bg || DEFAULT_BG;
   decorations = [];
@@ -1729,6 +1875,7 @@ function makeChainDef() {
 
 function updateChainBtn() {
   const b = $('chainBtn');
+  if (!b) return;   // 이어달리기 버튼은 단일 맵 UI에서 제거됨
   b.textContent = chainMode ? `🔗 이어달리기 ${mapChain.length}/3` : '🔗 이어달리기';
   b.style.borderColor = chainMode ? '#818cf8' : '';
   b.style.color = chainMode ? '#c7d2fe' : '';
@@ -1736,6 +1883,7 @@ function updateChainBtn() {
 
 function renderMapGrid() {
   const grid = $('mapGrid');
+  if (!grid) { renderMinimap(); return; }   // 선택 그리드 없이 코스 미리보기만
   grid.innerHTML = '';
   const mkBtn = (id, emoji, name, deletable) => {
     const b = document.createElement('button');
@@ -1769,7 +1917,7 @@ function renderMapGrid() {
         if (!confirm(`'${name}' 맵을 삭제할까요?`)) return;
         customMaps = customMaps.filter(m => m.id !== id);
         saveState({ customMaps });
-        if (mapChoice === id) { mapChoice = 'random'; saveState({ mapChoice }); }
+        if (mapChoice === id) { mapChoice = 'seonedu'; saveState({ mapChoice }); }
         if (edEditingId === id) edEditingId = null;
         renderMapGrid();
       };
@@ -1777,13 +1925,12 @@ function renderMapGrid() {
     }
     grid.appendChild(b);
   };
-  mkBtn('random', '🎰', '아무 맵이나!');
   MAPS.forEach(m => mkBtn(m.id, m.emoji, m.name));
   customMaps.forEach(m => mkBtn(m.id, '🛠', m.name, true));
   renderMinimap();
 }
 
-$('chainBtn').onclick = () => {
+if ($('chainBtn')) $('chainBtn').onclick = () => {
   chainMode = !chainMode;
   saveState({ chainMode });
   updateChainBtn();
@@ -1983,7 +2130,8 @@ function collideRect(r, b) {
     r.vy += -(1 + 0.85) * vn * ny;
   }
   // 부딪히면 HP 감소 (작은 블록이라 잘 깨짐)
-  if (speed > 130) {
+  // fragile(서울교육 캐릭터·키워드) 블록은 살짝만 스쳐도 깨진다 → 튕기면서 벽이 깎여 파일업 방지
+  if (b.fragile || speed > 130) {
     b.hp--;
     b.shake = 0.25;
     if (b.hp <= 0) {
@@ -2753,6 +2901,16 @@ function drawBackground(viewH) {
       ctx.fill();
     }
   }
+  // 서울교육 맵: 캐릭터 + 비전 배너
+  if (senActive) {
+    for (const m of mascots) {
+      if (m.y < camY - 120 || m.y > camY + viewH + 120) continue;
+      if (m.type === 'yeolimi') drawMascotYeolimi(m.x, m.y, m.flip);
+      else drawMascotJarana(m.x, m.y, m.flip);
+    }
+    drawSenBanner();
+  }
+
   // 결승선
   ctx.save();
   ctx.translate(0, finishY);
@@ -2766,6 +2924,110 @@ function drawBackground(viewH) {
   ctx.textAlign = 'center';
   ctx.fillText('🏁 결승선 🏁', WORLD_W / 2, 70);
   ctx.restore();
+}
+
+// ── 서울시교육청 캐릭터: 자라나 (흰 얼굴 + 청록 볏/후드 + 남색 몸통) ──
+function drawMascotJarana(x, y, flip) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (flip) ctx.scale(-1, 1);
+  const teal = '#17b0a6', tealD = '#0e8f86', navy = '#2f5aa8';
+  ctx.translate(0, Math.sin(performance.now() / 500 + x) * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.10)';
+  ctx.beginPath(); ctx.ellipse(0, 58, 30, 8, 0, 0, Math.PI * 2); ctx.fill();
+  // 몸통(남색) + 날개
+  ctx.fillStyle = navy;
+  ctx.beginPath(); ctx.ellipse(0, 30, 26, 24, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-24, 28, 10, 18, 0.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(24, 28, 10, 18, -0.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = teal;   // 날개 끝 청록
+  ctx.beginPath(); ctx.ellipse(-28, 38, 5, 8, 0.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(28, 38, 5, 8, -0.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#eafcf8';   // 흰 배
+  ctx.beginPath(); ctx.ellipse(0, 34, 13, 15, 0, 0, Math.PI * 2); ctx.fill();
+  // 머리: 청록 후드 + 볏
+  ctx.fillStyle = tealD;
+  ctx.beginPath(); ctx.arc(0, -8, 28, 0, Math.PI * 2); ctx.fill();
+  for (const dx of [-13, 0, 13]) {
+    ctx.beginPath();
+    ctx.moveTo(dx - 7, -30); ctx.quadraticCurveTo(dx, -52, dx + 7, -30);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = '#ffffff';   // 흰 얼굴
+  ctx.beginPath(); ctx.arc(0, -8, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ff9bb0';   // 볼
+  ctx.beginPath(); ctx.arc(-13, -3, 5.5, 0, Math.PI * 2); ctx.arc(13, -3, 5.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#2b2b3a';   // 눈
+  ctx.beginPath(); ctx.arc(-8, -11, 3.2, 0, Math.PI * 2); ctx.arc(8, -11, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-7, -12, 1.1, 0, Math.PI * 2); ctx.arc(9, -12, 1.1, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#2b2b3a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(0, -4, 5, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  ctx.restore();
+}
+
+// ── 서울시교육청 캐릭터: 열리미 (노란 열매 + 초록 새싹 + 주황 열매) ──
+function drawMascotYeolimi(x, y, flip) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (flip) ctx.scale(-1, 1);
+  const yellow = '#ffd93b', yellowD = '#f4b400', green = '#5bbf5b', greenD = '#3f9e3f', orange = '#ff8c42';
+  ctx.translate(0, Math.sin(performance.now() / 500 + x) * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.10)';
+  ctx.beginPath(); ctx.ellipse(0, 56, 30, 8, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = greenD; ctx.lineWidth = 4; ctx.lineCap = 'round';   // 줄기
+  ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(0, -44); ctx.stroke();
+  ctx.fillStyle = green;   // 잎
+  ctx.beginPath(); ctx.ellipse(-9, -44, 10, 5.5, -0.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, -44, 10, 5.5, 0.6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = yellow;   // 노란 몸
+  ctx.beginPath(); ctx.ellipse(0, 10, 30, 34, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = yellowD; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.ellipse(0, 10, 30, 34, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#fffdf0';   // 흰 얼굴
+  ctx.beginPath(); ctx.ellipse(0, 6, 19, 18, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffb0a8';   // 볼
+  ctx.beginPath(); ctx.arc(-12, 9, 5, 0, Math.PI * 2); ctx.arc(12, 9, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#3a2b1a'; ctx.lineWidth = 2.4;   // 웃는 눈
+  ctx.beginPath(); ctx.arc(-7, 3, 3.4, 1.1 * Math.PI, 1.9 * Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.arc(7, 3, 3.4, 1.1 * Math.PI, 1.9 * Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 8, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();   // 입
+  ctx.fillStyle = orange;   // 주황 열매
+  ctx.beginPath(); ctx.arc(26, 34, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = greenD; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(26, 27); ctx.lineTo(23, 22); ctx.stroke();
+  ctx.restore();
+}
+
+// ── 비전 배너: "미래를 여는 협력교육" + 3대 지표(꿈·긍지·신뢰) ──
+function drawSenBanner() {
+  if (camY > 220) return;   // 코스 상단에서만
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // 비전 문구는 지표 아래(출발 깔때기 위 빈 공간)에 두어 맵 이름표와 겹치지 않게
+  ctx.font = '800 38px "Pretendard Variable", Pretendard, sans-serif';
+  ctx.fillStyle = '#0e8f86';
+  ctx.fillText('미래를 여는', WORLD_W / 2, -74);
+  ctx.font = '800 50px "Pretendard Variable", Pretendard, sans-serif';
+  ctx.fillStyle = '#2f5aa8';
+  ctx.fillText('협력교육', WORLD_W / 2, -26);
+  const cx = WORLD_W / 2, cy = -190, rad = 46;
+  const nodes = [
+    { x: cx,      y: cy - 26, c: '#d6336c', a: '학생의', b: '꿈' },
+    { x: cx - 50, y: cy + 30, c: '#17a2a2', a: '교사의', b: '긍지' },
+    { x: cx + 50, y: cy + 30, c: '#2b6cb0', a: '부모의', b: '신뢰' },
+  ];
+  for (const n of nodes) {
+    ctx.beginPath(); ctx.arc(n.x, n.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = n.c + '33'; ctx.fill();
+    ctx.strokeStyle = n.c; ctx.lineWidth = 3; ctx.stroke();
+  }
+  for (const n of nodes) {
+    ctx.fillStyle = n.c;
+    ctx.font = '700 15px "Pretendard Variable", Pretendard, sans-serif';
+    ctx.fillText(n.a, n.x, n.y - 9);
+    ctx.font = '800 22px "Pretendard Variable", Pretendard, sans-serif';
+    ctx.fillText(n.b, n.x, n.y + 12);
+  }
 }
 
 function drawMap() {
@@ -3104,17 +3366,19 @@ function drawRunners() {
       ctx.fillText(r.stunT > 0 ? '❄️' : r.magT > 0 ? '🧲' : '🐌', r.x, r.y - dr - 16);
     }
 
-    // 이름표 (축소 화면에서는 생략)
+    // 이름표 (축소 화면에서는 생략) — 화면 배율과 무관하게 항상 크게
     if (showNames) {
-      ctx.font = '600 13px "Pretendard Variable", Pretendard, "Malgun Gothic", sans-serif';
+      const fs = Math.min(30, 17 / camScale);
+      ctx.font = `700 ${fs.toFixed(1)}px "Pretendard Variable", Pretendard, "Malgun Gothic", sans-serif`;
       const tw = ctx.measureText(r.name).width;
-      ctx.fillStyle = 'rgba(13,16,22,0.78)';
+      const ph = fs * 1.55;
+      ctx.fillStyle = 'rgba(13,16,22,0.8)';
       ctx.beginPath();
-      ctx.roundRect(r.x - tw / 2 - 7, r.y + dr + 4, tw + 14, 20, 10);
+      ctx.roundRect(r.x - tw / 2 - 9, r.y + dr + 4, tw + 18, ph, ph / 2);
       ctx.fill();
       ctx.fillStyle = '#f2f4f8';
       ctx.textBaseline = 'top';
-      ctx.fillText(r.name, r.x, r.y + dr + 8);
+      ctx.fillText(r.name, r.x, r.y + dr + 4 + fs * 0.26);
     }
   }
 }
@@ -3365,7 +3629,7 @@ document.querySelectorAll('.ed-len').forEach(b => {
   b.onclick = () => { edHeight = parseInt(b.dataset.len); updateLenButtons(); edDraw(); };
 });
 
-$('openEditorBtn').onclick = openEditor;
+if ($('openEditorBtn')) $('openEditorBtn').onclick = openEditor;
 function openEditor() {
   setupScreen.style.display = 'none';
   $('editorScreen').style.display = 'block';
