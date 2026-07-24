@@ -2245,6 +2245,27 @@ function collideRunners(a, b) {
   }
 }
 
+// 출발 깔때기 경사벽 가두기 — 구슬이 벽의 어느 쪽에 있든 항상 안쪽으로 사영한다.
+// 일반 벽 판정은 중심선을 넘어간 구슬을 바깥으로 밀어내 뚫림이 생기므로, 이 두 벽만은 부호를 고정.
+function confineToLine(r, x1, y1, x2, y2, nx, ny) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const t = ((r.x - x1) * dx + (r.y - y1) * dy) / (dx * dx + dy * dy);
+  if (t < 0 || t > 1) return;
+  const px = x1 + dx * t, py = y1 + dy * t;
+  const s = (r.x - px) * nx + (r.y - py) * ny;   // 안쪽 방향 부호 거리
+  const minS = r.r + 5;                           // 5 = 벽 두께 10의 절반
+  if (s >= minS) return;
+  r.x += (minS - s) * nx; r.y += (minS - s) * ny;
+  const vn = r.vx * nx + r.vy * ny;
+  if (vn < 0) { r.vx -= (1 + RESTITUTION) * vn * nx; r.vy -= (1 + RESTITUTION) * vn * ny; }
+}
+const FUNNEL_LEN = Math.hypot(285, 210);
+function confineFunnel(r) {
+  if (r.y < 60 || r.y > 380) return;   // 경사벽 y 대역(120~330) + 반지름 여유
+  confineToLine(r, L, 120, 330, 330, 210 / FUNNEL_LEN, -285 / FUNNEL_LEN);
+  confineToLine(r, R, 120, 570, 330, -210 / FUNNEL_LEN, -285 / FUNNEL_LEN);
+}
+
 function burstParticles(x, y, color, count = 22) {
   // 대인원에서 이벤트가 겹치면 파티클이 수천 개까지 쌓여 렌더링 병목이 된다 — 상한 유지
   if (particles.length > 1200) return;
@@ -2273,6 +2294,7 @@ let raceToken = 0;       // 판 구분용 (지연 콜백이 다음 판을 침범
 let raceRunning = false;
 let winnerDeclared = false;
 let resultShown = false;
+let allDoneNotified = false;   // 전원 종료 안전망이 이미 발동했는지
 
 function stepPhysics(dt) {
   const sub = dt / SUBSTEPS;
@@ -2492,9 +2514,9 @@ function stepPhysics(dt) {
         if (collideCircle(r, e.x, e.y, e.r, true, e.vx)) beepBounce(200);
       }
       if (r.y < -400) { r.y = -400; r.vy = Math.abs(r.vy) * 0.3; }
-      // 좌우 외벽(L·R) 밖은 어떤 경우에도 못 나간다 — 세계 끝이 아니라 코스 벽 기준으로 클램프
-      if (r.x < L + r.r - 6) { r.x = L + r.r - 6; r.vx = Math.abs(r.vx) * 0.5; }
-      if (r.x > R - r.r + 6) { r.x = R - r.r + 6; r.vx = -Math.abs(r.vx) * 0.5; }
+      // 좌우 외벽 표면(벽두께/2 + 반지름) 기준 클램프 — 벽 안에 박힌 채 그려지는 일이 없다
+      if (r.x < L + 5 + r.r) { r.x = L + 5 + r.r; if (r.vx < 0) r.vx = -r.vx * RESTITUTION; }
+      if (r.x > R - 5 - r.r) { r.x = R - 5 - r.r; if (r.vx > 0) r.vx = -r.vx * RESTITUTION; }
     }
     for (let i = 0; i < runners.length; i++) {
       if (runners[i].finished || runners[i].swallowed) continue;
@@ -2510,13 +2532,16 @@ function stepPhysics(dt) {
         if (r.y < w.yMin || r.y > w.yMax) continue;
         collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
       }
+      // 출발 깔때기 경사벽: 어느 쪽으로 밀려났든 무조건 안쪽으로 되돌린다
+      // (일반 벽 판정은 이미 넘어간 구슬을 바깥쪽으로 밀어내 버려서 뚫림이 생긴다)
+      confineFunnel(r);
       if (!gateOpen) {
         for (const w of gateWalls) collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
         // 출발 전에는 어떤 구슬도 출발문 아래로 새어 나가지 못한다 (345 - 문두께/2 - 반지름)
         if (r.y > 322) { r.y = 322; if (r.vy > 0) r.vy = 0; }
       }
-      if (r.x < L + r.r - 6) { r.x = L + r.r - 6; if (r.vx < 0) r.vx = -r.vx * 0.5; }
-      if (r.x > R - r.r + 6) { r.x = R - r.r + 6; if (r.vx > 0) r.vx = -r.vx * 0.5; }
+      if (r.x < L + 5 + r.r) { r.x = L + 5 + r.r; if (r.vx < 0) r.vx = -r.vx * RESTITUTION; }
+      if (r.x > R - 5 - r.r) { r.x = R - 5 - r.r; if (r.vx > 0) r.vx = -r.vx * RESTITUTION; }
     }
     // 블랙홀에 삼켜진 분신 / 다 쓴 블랙홀·트램펄린 제거
     runners = runners.filter(r => !r.swallowed);
@@ -3582,6 +3607,12 @@ function loop(ts) {
     for (let i = 0; i < speedMult; i++) stepPhysics(DT);
     // 실시간 순위 갱신 (0.3초마다)
     if (ts - lastRankT > 300) { lastRankT = ts; updateLiveRank(); }
+    // 종료 안전망: 마지막 활성 구슬이 결승선이 아니라 블랙홀로 사라지면
+    // "결승선 통과 순간"의 종료 판정이 영영 안 걸린다 — 프레임 단위로 한 번 더 확인
+    if (!allDoneNotified && !resultShown && runners.length && finishedCount >= runners.length) {
+      allDoneNotified = true;
+      onAllFinished();
+    }
   }
   render();
   stepConfetti(dt);
@@ -3631,6 +3662,7 @@ function startRace(entries, forcedMap) {
   raceWinners = [];
   winnerDeclared = false;
   resultShown = false;
+  allDoneNotified = false;
   gateOpen = false;
   speedMult = 1;
   $('speedBtn').classList.remove('toggled');
@@ -3656,11 +3688,13 @@ $('viewBtn').onclick = () => {
   $('viewBtn').textContent = VIEW_LABELS[viewMode];
 };
 $('skipBtn').onclick = () => {
-  if (!raceRunning) return;
+  if (!runners.length) return;
   gateOpen = true;
   let guard = 60 * 180;
   while (finishedCount < runners.length && guard-- > 0) stepPhysics(DT);
-  if (!resultShown) { $('winnerOverlay').style.display = 'none'; showResults(); }
+  // 이미 한 번 보고 닫았어도 다시 열 수 있어야 한다
+  $('winnerOverlay').style.display = 'none';
+  showResults();
 };
 $('homeBtn').onclick = goHome;
 $('toSetupBtn').onclick = goHome;
