@@ -938,6 +938,7 @@ class Runner {
     this.r = RUNNER_R;
     this.finished = false; this.rank = 0;
     this.stuckTime = 0;
+    this.ax = x; this.ay = y; this.aT = 0;  // 제자리 정체 감지용 기준점·누적 시간
     this.spin = Math.random() * Math.PI * 2;
     this.holeCd = 0;        // 블랙홀에서 내뱉어진 뒤 잠깐 면역
     this.swallowed = false; // 블랙홀에 삼켜짐 (분신만)
@@ -2645,6 +2646,18 @@ function stepPhysics(dt) {
         r.stuckTime = 0;
       }
     } else r.stuckTime = 0;
+    // 제자리 정체 감지: 벽 돌기 위에 얹혀 통통 튀는 구슬은 속도 검사에 안 걸린다
+    // → "위치가 안 변하는 시간"으로 잡아서 맵이 흔들어 떨어뜨려 준다
+    if (gateOpen && r.stunT <= 0 && r.slowT <= 0) {   // 얼음·달팽이 중에는 정상 정지
+      if (Math.hypot(r.x - r.ax, r.y - r.ay) > 34) { r.ax = r.x; r.ay = r.y; r.aT = 0; }
+      else if ((r.aT += dt) > 2.2) {
+        const inward = r.x < WORLD_W / 2 ? 1 : -1;   // 코스 안쪽으로 밀어낸다
+        r.vx = inward * (320 + Math.random() * 240);
+        r.vy = -(220 + Math.random() * 160);
+        burstParticles(r.x, r.y, '#ffffff', 8);
+        r.ax = r.x; r.ay = r.y; r.aT = 0;
+      }
+    }
   }
 }
 
