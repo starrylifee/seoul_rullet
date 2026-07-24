@@ -949,6 +949,9 @@ class Runner {
 class Wall {
   constructor(x1, y1, x2, y2, thick = 10) {
     this.x1 = x1; this.y1 = y1; this.x2 = x2; this.y2 = y2; this.t = thick;
+    // 충돌 사전 컷용 y 범위 (커지기 아이템 최대 반지름 34 + 여유 포함)
+    this.yMin = Math.min(y1, y2) - thick - 44;
+    this.yMax = Math.max(y1, y2) + thick + 44;
   }
 }
 class Peg {
@@ -1511,7 +1514,10 @@ function probeFlow(fy) {
       const sp = Math.hypot(r.vx, r.vy);
       if (sp > MAX_SPEED) { r.vx *= MAX_SPEED / sp; r.vy *= MAX_SPEED / sp; }
       r.x += r.vx * dt; r.y += r.vy * dt;
-      for (const w of walls) collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
+      for (const w of walls) {
+        if (r.y < w.yMin || r.y > w.yMax) continue;
+        collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
+      }
       for (const g of pegs) collideCircle(r, g.x, g.y, g.r, false);
       for (const s of spinners) for (const seg of s.segments())
         collideSegment(r, seg.x1, seg.y1, seg.x2, seg.y2, s.t);
@@ -1680,6 +1686,9 @@ function buildMap(mapDef, previewOnly) {
   // 깔때기 위 모서리를 넘어 벽 바깥 빈 통로로 빠지지 못하게 한다
   walls.push(new Wall(L, -450, L, fy + 10));
   walls.push(new Wall(R, -450, R, fy + 10));
+
+  // 블록 충돌을 이진 탐색으로 줄이기 위한 y 정렬 (블록 위치는 이후 변하지 않는다)
+  letters.sort((a, b) => a.y - b.y);
 
   // 좌우 벽 돌기 — 벽을 타고 직진 낙하하는 구슬을 안쪽으로 튕겨낸다 (좌우 엇갈리게)
   if (mapDef.senChars) {
@@ -2223,7 +2232,8 @@ function collideRunners(a, b) {
   const minDist = a.r + b.r;
   if (dist >= minDist || dist === 0) return;
   nx /= dist; ny /= dist;
-  const overlap = (minDist - dist) / 2;
+  // 밀어내기 상한: 밀집 더미에서 연쇄 보정이 한 번에 벽 두께를 넘기면 벽을 뚫고 나간다
+  const overlap = Math.min(6, (minDist - dist) / 2);
   a.x -= nx * overlap; a.y -= ny * overlap;
   b.x += nx * overlap; b.y += ny * overlap;
   const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
@@ -2236,6 +2246,9 @@ function collideRunners(a, b) {
 }
 
 function burstParticles(x, y, color, count = 22) {
+  // 대인원에서 이벤트가 겹치면 파티클이 수천 개까지 쌓여 렌더링 병목이 된다 — 상한 유지
+  if (particles.length > 1200) return;
+  if (particles.length > 700) count = Math.min(count, 6);
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
     const sp = 120 + Math.random() * 300;
@@ -2404,7 +2417,10 @@ function stepPhysics(dt) {
       r.y += r.vy * sub;
       r.spin += (r.vx * 0.002);
 
-      for (const w of walls) collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
+      for (const w of walls) {
+        if (r.y < w.yMin || r.y > w.yMax) continue;
+        collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
+      }
       // 사라지는 바닥: 닫혀 있을 때만 밟을 수 있다
       for (const tw of traps) if (!tw.open) collideSegment(r, tw.x1, tw.y1, tw.x2, tw.y2, tw.t);
       if (!gateOpen) for (const w of gateWalls) collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
@@ -2449,24 +2465,36 @@ function stepPhysics(dt) {
         beep(300, 0.12, 'square', 0.12, 0.06);
         break;
       }
-      for (const p of pegs) collideCircle(r, p.x, p.y, p.r, p.bouncy);
+      for (const p of pegs) {
+        if (Math.abs(r.y - p.y) > p.r + r.r + 10) continue;
+        collideCircle(r, p.x, p.y, p.r, p.bouncy);
+      }
       for (const s of spinners) {
+        if (Math.abs(r.y - s.cy) > s.len + r.r + 26) continue;
         for (const seg of s.segments()) {
           const relX = r.x - s.cx, relY = r.y - s.cy;
           const surfVx = -s.omega * relY, surfVy = s.omega * relX;
           collideSegment(r, seg.x1, seg.y1, seg.x2, seg.y2, s.t, surfVx, surfVy, 0.1);
         }
       }
-      for (const b of letters) {
-        if (Math.abs(r.y - b.y) > 160 || b.dead) continue;
-        collideRect(r, b);
+      // letters는 y 오름차순 정렬 상태 → 이진 탐색으로 근처 블록만 검사
+      {
+        let lo = 0, hi = letters.length;
+        const yLo = r.y - 160;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (letters[mid].y < yLo) lo = mid + 1; else hi = mid; }
+        for (; lo < letters.length; lo++) {
+          const b = letters[lo];
+          if (b.y > r.y + 160) break;
+          if (!b.dead) collideRect(r, b);
+        }
       }
       for (const e of enemies) {
         if (collideCircle(r, e.x, e.y, e.r, true, e.vx)) beepBounce(200);
       }
       if (r.y < -400) { r.y = -400; r.vy = Math.abs(r.vy) * 0.3; }
-      if (r.x < r.r) { r.x = r.r; r.vx = Math.abs(r.vx) * 0.5; }
-      if (r.x > WORLD_W - r.r) { r.x = WORLD_W - r.r; r.vx = -Math.abs(r.vx) * 0.5; }
+      // 좌우 외벽(L·R) 밖은 어떤 경우에도 못 나간다 — 세계 끝이 아니라 코스 벽 기준으로 클램프
+      if (r.x < L + r.r - 6) { r.x = L + r.r - 6; r.vx = Math.abs(r.vx) * 0.5; }
+      if (r.x > R - r.r + 6) { r.x = R - r.r + 6; r.vx = -Math.abs(r.vx) * 0.5; }
     }
     for (let i = 0; i < runners.length; i++) {
       if (runners[i].finished || runners[i].swallowed) continue;
@@ -2474,6 +2502,21 @@ function stepPhysics(dt) {
         if (runners[j].finished || runners[j].swallowed) continue;
         collideRunners(runners[i], runners[j]);
       }
+    }
+    // 구슬끼리 민 뒤에도 벽이 최종 우선 — 더미 압력에 밀려 벽을 넘은 구슬을 되돌린다
+    for (const r of runners) {
+      if (r.finished || r.swallowed) continue;
+      for (const w of walls) {
+        if (r.y < w.yMin || r.y > w.yMax) continue;
+        collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
+      }
+      if (!gateOpen) {
+        for (const w of gateWalls) collideSegment(r, w.x1, w.y1, w.x2, w.y2, w.t);
+        // 출발 전에는 어떤 구슬도 출발문 아래로 새어 나가지 못한다 (345 - 문두께/2 - 반지름)
+        if (r.y > 322) { r.y = 322; if (r.vy > 0) r.vy = 0; }
+      }
+      if (r.x < L + r.r - 6) { r.x = L + r.r - 6; if (r.vx < 0) r.vx = -r.vx * 0.5; }
+      if (r.x > R - r.r + 6) { r.x = R - r.r + 6; if (r.vx > 0) r.vx = -r.vx * 0.5; }
     }
     // 블랙홀에 삼켜진 분신 / 다 쓴 블랙홀·트램펄린 제거
     runners = runners.filter(r => !r.swallowed);
@@ -3052,8 +3095,11 @@ function drawSenBanner() {
 
 function drawMap() {
   const th = T();
+  // 화면에 보이는 y 범위 밖은 그리지 않는다 (긴 코스 + 블록 수천 개 대응)
+  const vy0 = camY - 140, vy1 = camY + canvas.height / camScale + 140;
   ctx.lineCap = 'round';
   for (const w of walls) {
+    if (Math.max(w.y1, w.y2) < vy0 || Math.min(w.y1, w.y2) > vy1) continue;
     ctx.strokeStyle = th.wallOuter;
     ctx.lineWidth = w.t + 6;
     ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
@@ -3114,6 +3160,7 @@ function drawMap() {
     ctx.fillText('▼', g.x, g.y - 26 - Math.abs(Math.sin(performance.now() / 300)) * 8);
   }
   for (const p of pegs) {
+    if (p.y < vy0 || p.y > vy1) continue;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     if (theme === '3d' || theme === 'marble') {
@@ -3146,15 +3193,24 @@ function drawMap() {
     ctx.fillStyle = th.spinnerHub;
     ctx.fill();
   }
-  // 픽셀 블록 (모여서 글자 모양)
-  for (const b of letters) {
-    ctx.fillStyle = b.color;
-    ctx.beginPath();
-    ctx.roundRect(b.x, b.y, b.w, b.h, 4);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+  // 픽셀 블록 (모여서 글자 모양) — y 정렬 상태라 이진 탐색으로 보이는 구간만
+  {
+    let lo = 0, hi = letters.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (letters[mid].y < vy0) lo = mid + 1; else hi = mid; }
+    // 축소 화면(전체 보기)에서는 블록이 몇 픽셀 크기라 테두리·라운드가 안 보인다 — 단순 사각형으로
+    const simple = camScale < 0.3;
+    for (; lo < letters.length; lo++) {
+      const b = letters[lo];
+      if (b.y > vy1) break;
+      ctx.fillStyle = b.color;
+      if (simple) { ctx.fillRect(b.x, b.y, b.w, b.h); continue; }
+      ctx.beginPath();
+      ctx.roundRect(b.x, b.y, b.w, b.h, 4);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
   }
   // 아이템
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -3297,15 +3353,59 @@ function drawMap() {
 }
 
 function drawParticles() {
+  // save/restore 스택 대신 역변환으로 되돌리고, 화면 밖 파티클은 건너뛴다
+  const vy0 = camY - 60, vy1 = camY + canvas.height / camScale + 60;
   for (const p of particles) {
-    ctx.save();
+    if (p.y < vy0 || p.y > vy1) continue;
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rot);
     ctx.globalAlpha = Math.min(1, p.life);
     ctx.fillStyle = p.color;
     ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
-    ctx.restore();
+    ctx.rotate(-p.rot);
+    ctx.translate(-p.x, -p.y);
   }
+  ctx.globalAlpha = 1;
+}
+
+// ── 이모지·이름표 스프라이트 캐시 ──
+// fillText·measureText를 매 프레임 인원수만큼 부르면 대인원(200명)에서 렌더링이 병목이 된다.
+// 같은 그림은 오프스크린 캔버스에 한 번만 그려서 drawImage로 재사용한다.
+const emojiSpriteCache = new Map();
+function emojiSprite(emoji, px) {
+  px = Math.max(8, Math.round(px));
+  const key = emoji + '@' + px;
+  let c = emojiSpriteCache.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    const pad = Math.ceil(px * 0.3);
+    c.width = c.height = px + pad * 2;
+    const g = c.getContext('2d');
+    g.font = `${px}px sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(emoji, c.width / 2, c.height / 2 + 1);
+    emojiSpriteCache.set(key, c);
+  }
+  return c;
+}
+function namePill(r, fs) {
+  const key = Math.round(fs * 10);
+  if (r.__pill && r.__pillKey === key) return r.__pill;
+  const c = document.createElement('canvas');
+  const g = c.getContext('2d');
+  const font = `700 ${fs.toFixed(1)}px "Pretendard Variable", Pretendard, "Malgun Gothic", sans-serif`;
+  g.font = font;
+  const tw = g.measureText(r.name).width;
+  const ph = fs * 1.55;
+  c.width = Math.ceil(tw + 18); c.height = Math.ceil(ph) + 1;
+  g.font = font;   // 캔버스 크기를 바꾸면 컨텍스트 상태가 초기화된다
+  g.fillStyle = 'rgba(13,16,22,0.8)';
+  g.beginPath(); g.roundRect(0, 0, tw + 18, ph, ph / 2); g.fill();
+  g.fillStyle = '#f2f4f8';
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  g.fillText(r.name, c.width / 2, fs * 0.26);
+  r.__pill = c; r.__pillKey = key;
+  return c;
 }
 
 function drawRunners() {
@@ -3313,8 +3413,10 @@ function drawRunners() {
   // 전체 보기처럼 축소된 화면에서는 최소 크기 보장 + 이름표 생략
   const showNames = camScale >= 0.5;
   const minR = 8 / camScale;
+  // 화면 밖 구슬은 그리지 않는다 (진행바에는 전원 표시되므로 정보 손실 없음)
+  const vy0 = camY - 140, vy1 = camY + canvas.height / camScale + 180;
   for (const r of runners) {
-    if (r.finished) continue;
+    if (r.finished || r.y < vy0 || r.y > vy1) continue;
     const dr = Math.max(r.r, minR);
 
     if (theme === 'marble') {
@@ -3333,9 +3435,8 @@ function drawRunners() {
       if (showChars) {
         ctx.save();
         ctx.globalAlpha = 0.8;
-        ctx.font = `${dr * 1.15}px sans-serif`;
-        ctx.textBaseline = 'middle';
-        ctx.fillText(r.emoji, r.x, r.y + 1);
+        const sp = emojiSprite(r.emoji, dr * 1.15);
+        ctx.drawImage(sp, r.x - sp.width / 2, r.y + 1 - sp.height / 2);
         ctx.restore();
       }
     } else if (theme === '3d') {
@@ -3356,9 +3457,8 @@ function drawRunners() {
         ctx.save();
         ctx.translate(r.x, r.y);
         ctx.rotate(Math.sin(r.spin) * 0.25);
-        ctx.font = `${dr * 1.45}px sans-serif`;
-        ctx.textBaseline = 'middle';
-        ctx.fillText(r.emoji, 0, 1);
+        const sp = emojiSprite(r.emoji, dr * 1.45);
+        ctx.drawImage(sp, -sp.width / 2, 1 - sp.height / 2);
         ctx.restore();
       }
     } else {
@@ -3374,9 +3474,8 @@ function drawRunners() {
         ctx.save();
         ctx.translate(r.x, r.y);
         ctx.rotate(Math.sin(r.spin) * 0.25);
-        ctx.font = `${dr * 1.5}px sans-serif`;
-        ctx.textBaseline = 'middle';
-        ctx.fillText(r.emoji, 0, 1);
+        const sp = emojiSprite(r.emoji, dr * 1.5);
+        ctx.drawImage(sp, -sp.width / 2, 1 - sp.height / 2);
         ctx.restore();
       }
     }
@@ -3391,16 +3490,8 @@ function drawRunners() {
     // 이름표 (축소 화면에서는 생략) — 화면 배율과 무관하게 항상 크게
     if (showNames) {
       const fs = Math.min(30, 17 / camScale);
-      ctx.font = `700 ${fs.toFixed(1)}px "Pretendard Variable", Pretendard, "Malgun Gothic", sans-serif`;
-      const tw = ctx.measureText(r.name).width;
-      const ph = fs * 1.55;
-      ctx.fillStyle = 'rgba(13,16,22,0.8)';
-      ctx.beginPath();
-      ctx.roundRect(r.x - tw / 2 - 9, r.y + dr + 4, tw + 18, ph, ph / 2);
-      ctx.fill();
-      ctx.fillStyle = '#f2f4f8';
-      ctx.textBaseline = 'top';
-      ctx.fillText(r.name, r.x, r.y + dr + 4 + fs * 0.26);
+      const pill = namePill(r, fs);
+      ctx.drawImage(pill, r.x - pill.width / 2, r.y + dr + 4);
     }
   }
 }
@@ -3429,7 +3520,8 @@ function drawProgressBar(W, H) {
     if (r.finished) continue;
     const prog = Math.max(0, Math.min(1, (r.y + 300) / (finishY + 300)));
     if (showChars) {
-      ctx.fillText(r.emoji, barX, barTop + prog * barH);
+      const sp = emojiSprite(r.emoji, 16);
+      ctx.drawImage(sp, barX - sp.width / 2, barTop + prog * barH - sp.height / 2);
     } else {
       ctx.beginPath();
       ctx.arc(barX, barTop + prog * barH, 6, 0, Math.PI * 2);
